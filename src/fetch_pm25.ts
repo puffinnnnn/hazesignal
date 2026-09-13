@@ -39,13 +39,15 @@ export async function fetchPm25(
   const wrongParameter = data.results.find((row) => row.parameter.name.toLowerCase() !== "pm25");
   if (wrongParameter) throw new Error(`Sensor ${sensorId} reports ${wrongParameter.parameter.name}, not PM2.5.`);
 
-  return data.results.flatMap((row) => row.value == null || !row.period ? [] : [{
+  const rows = data.results.flatMap((row) => row.value == null || !row.period ? [] : [{
     date: row.period.datetimeFrom.local.slice(0, 10),
     pm25_ug_m3: row.value,
     unit: row.parameter.units,
     coverage_percent: row.coverage?.percentComplete ?? "",
     sensor_id: sensorId,
   }]);
+  if (rows.length === 0) throw new Error(`OpenAQ has no PM2.5 data for sensor ${sensorId} in this date range.`);
+  return rows;
 }
 
 async function main(): Promise<void> {

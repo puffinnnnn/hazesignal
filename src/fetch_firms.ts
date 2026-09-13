@@ -35,7 +35,11 @@ export async function fetchFirms(
       const response = await fetch(url);
       if (!response.ok) throw new Error(`FIRMS request failed (${response.status}) for ${region.name}.`);
 
-      const chunk = parseCsv<FirmsApiRow>(await response.text());
+      const text = await response.text();
+      if (!text.split(/\r?\n/, 1)[0]?.includes("latitude")) {
+        throw new Error(`FIRMS returned an unexpected response for ${region.name}. Check the MAP_KEY and date range.`);
+      }
+      const chunk = parseCsv<FirmsApiRow>(text);
       if (chunk.length > 0 && (!chunk[0]?.latitude || !chunk[0]?.longitude || !chunk[0]?.acq_date)) {
         throw new Error(`FIRMS returned an unexpected response for ${region.name}.`);
       }
@@ -62,4 +66,3 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.exitCode = 1;
   });
 }
-
