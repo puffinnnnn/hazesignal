@@ -6,7 +6,7 @@
 
 **Architecture:** Three command-line fetchers save source data as CSV. Shared analysis functions aggregate, join, regress, and render a plot for a TypeScript Jupyter notebook and a reproducible command-line run.
 
-**Tech Stack:** Node.js 20, TypeScript, tsx, csv-parse/csv-stringify, dotenv, tslab, Jupyter
+**Tech Stack:** Node.js 20, TypeScript, tsx, csv-parse/csv-stringify, dotenv, Deno Jupyter kernel
 
 **Spec:** `docs/superpowers/specs/2026-09-13-hazesignal-design.md`
 

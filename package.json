@@ -1,0 +1,29 @@
+{
+  "name": "hazesignal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An exploratory fire-and-wind early-warning signal for haze in Malaysia.",
+  "scripts": {
+    "fetch:firms": "tsx src/fetch_firms.ts",
+    "fetch:wind": "tsx src/fetch_wind.ts",
+    "fetch:pm25": "tsx src/fetch_pm25.ts",
+    "analyze": "tsx src/run_analysis.ts",
+    "test": "node --import tsx --test",
+    "typecheck": "tsc --noEmit",
+    "notebook:install": "deno jupyter --install"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.6.0",
+    "dotenv": "^17.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -8,7 +8,7 @@ Test whether fire hotspots in Sumatra and Kalimantan, weighted by winds carrying
 
 HazeSignal is a TypeScript research repository, not an application. Small command-line scripts fetch each source into CSV files. A TypeScript Jupyter notebook imports readable analysis helpers, combines daily observations, calculates one- and two-day leads, fits a simple linear regression, and draws an SVG scatter plot.
 
-The project uses Node.js 20's built-in `fetch`, `fs`, and test runner. Dependencies are limited to TypeScript execution, `.env` loading, CSV parsing/writing, and the TypeScript Jupyter kernel.
+The project uses Node.js 20's built-in `fetch`, `fs`, and test runner. Dependencies are limited to TypeScript execution, `.env` loading, and CSV parsing/writing. The notebook uses Deno's maintained TypeScript Jupyter kernel.
 
 ## Data sources
 
