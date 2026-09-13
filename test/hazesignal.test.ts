@@ -10,6 +10,7 @@ import {
   linearRegression,
   windTravelBearing,
 } from "../src/analysis.js";
+import { fetchWithRetry } from "../src/fetch_firms.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -77,4 +78,18 @@ test("linearRegression fits a perfect straight line", () => {
   assert.equal(result.intercept, 1);
   assert.ok(Math.abs(result.r - 1) < 1e-12);
   assert.ok(Math.abs(result.rSquared - 1) < 1e-12);
+});
+
+test("fetchWithRetry retries temporary network failures", async () => {
+  let attempts = 0;
+  const request = async () => {
+    attempts += 1;
+    if (attempts < 3) throw new Error("fetch failed");
+    return new Response("ok");
+  };
+
+  const response = await fetchWithRetry("https://example.test", request as typeof fetch, 0);
+
+  assert.equal(await response.text(), "ok");
+  assert.equal(attempts, 3);
 });

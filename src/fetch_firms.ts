@@ -18,6 +18,23 @@ type FirmsApiRow = Record<string, string> & {
   acq_date: string;
 };
 
+export async function fetchWithRetry(
+  url: string,
+  request: typeof fetch = fetch,
+  delayMs = 1_000,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await request(url, { signal: AbortSignal.timeout(60_000) });
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+    }
+  }
+  throw new Error(`FIRMS network request failed after 3 attempts: ${lastError instanceof Error ? lastError.message : lastError}`);
+}
+
 async function fetchChunk(
   region: typeof REGIONS[number],
   startDate: string,
@@ -25,7 +42,12 @@ async function fetchChunk(
   mapKey: string,
 ): Promise<CsvRow[]> {
   const url = `${FIRMS_URL}/${mapKey}/${SENSOR}/${region.bbox}/${dayRange}/${startDate}`;
-  const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
+  let response: Response;
+  try {
+    response = await fetchWithRetry(url);
+  } catch (error) {
+    throw new Error(`FIRMS request failed for ${region.name} on ${startDate}: ${error instanceof Error ? error.message : error}`);
+  }
   if (!response.ok) throw new Error(`FIRMS request failed (${response.status}) for ${region.name}.`);
 
   const text = await response.text();
