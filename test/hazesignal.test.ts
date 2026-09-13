@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseCsv, validateDateRange } from "../src/csv.js";
-import { alignmentScore, dailyWind, initialBearing, windTravelBearing } from "../src/analysis.js";
+import {
+  alignmentScore,
+  combineDailyData,
+  dailyWind,
+  initialBearing,
+  linearRegression,
+  windTravelBearing,
+} from "../src/analysis.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -35,4 +42,39 @@ test("dailyWind averages directions across zero degrees", () => {
   assert.ok(day);
   assert.equal(day.wind_speed_kmh, 10);
   assert.ok(day.wind_direction_degrees < 1 || day.wind_direction_degrees > 359);
+});
+
+test("combineDailyData joins PM2.5 by calendar-day leads", () => {
+  const rows = combineDailyData(
+    [
+      { acq_date: "2019-09-01", region: "sumatra" },
+      { acq_date: "2019-09-01", region: "sumatra" },
+    ],
+    [{
+      date: "2019-09-01",
+      wind_speed_kmh: 10,
+      wind_direction_degrees: 225,
+      observations: 24,
+    }],
+    [
+      { date: "2019-09-01", pm25_ug_m3: 20 },
+      { date: "2019-09-02", pm25_ug_m3: 30 },
+      { date: "2019-09-03", pm25_ug_m3: 40 },
+    ],
+  );
+  assert.equal(rows[0]?.hotspot_count, 2);
+  assert.equal(rows[0]?.pm25_next_day, 30);
+  assert.equal(rows[0]?.pm25_in_two_days, 40);
+});
+
+test("linearRegression fits a perfect straight line", () => {
+  const result = linearRegression([
+    { x: 1, y: 3 },
+    { x: 2, y: 5 },
+    { x: 3, y: 7 },
+  ]);
+  assert.equal(result.slope, 2);
+  assert.equal(result.intercept, 1);
+  assert.ok(Math.abs(result.r - 1) < 1e-12);
+  assert.ok(Math.abs(result.rSquared - 1) < 1e-12);
 });

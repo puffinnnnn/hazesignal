@@ -13,6 +13,33 @@ export interface DailyWind extends HourlyWind {
   observations: number;
 }
 
+export interface FireHotspot {
+  acq_date: string;
+  region: keyof typeof SOURCE_CENTROIDS;
+}
+
+export interface Pm25Reading {
+  date: string;
+  pm25_ug_m3: number;
+}
+
+export interface CombinedDay extends DailyWind {
+  hotspot_count: number;
+  wind_alignment: number;
+  aligned_hotspot_count: number;
+  pm25_ug_m3: number | null;
+  pm25_next_day: number | null;
+  pm25_in_two_days: number | null;
+}
+
+export interface RegressionResult {
+  slope: number;
+  intercept: number;
+  r: number;
+  rSquared: number;
+  observations: number;
+}
+
 export const KUALA_LUMPUR: Coordinates = { latitude: 3.139, longitude: 101.6869 };
 export const SOURCE_CENTROIDS = {
   sumatra: { latitude: 0, longitude: 101 },
@@ -62,4 +89,94 @@ export function dailyWind(rows: HourlyWind[]): DailyWind[] {
       observations: hours.length,
     };
   });
+}
+
+export function combineDailyData(
+  hotspots: FireHotspot[],
+  wind: DailyWind[],
+  pm25: Pm25Reading[],
+): CombinedDay[] {
+  const pm25ByDate = new Map(pm25.map((row) => [row.date, row.pm25_ug_m3]));
+  const firesByDate = new Map<string, FireHotspot[]>();
+  for (const fire of hotspots) firesByDate.set(fire.acq_date, [...(firesByDate.get(fire.acq_date) ?? []), fire]);
+
+  return wind.map((day) => {
+    const fires = firesByDate.get(day.date) ?? [];
+    const alignedHotspots = fires.reduce((sum, fire) => {
+      const source = SOURCE_CENTROIDS[fire.region];
+      if (!source) throw new Error(`Unknown fire region: ${fire.region}`);
+      const route = initialBearing(source.latitude, source.longitude, KUALA_LUMPUR.latitude, KUALA_LUMPUR.longitude);
+      return sum + alignmentScore(day.wind_direction_degrees, route);
+    }, 0);
+    return {
+      ...day,
+      hotspot_count: fires.length,
+      wind_alignment: fires.length === 0 ? 0 : alignedHotspots / fires.length,
+      aligned_hotspot_count: alignedHotspots,
+      pm25_ug_m3: pm25ByDate.get(day.date) ?? null,
+      pm25_next_day: pm25ByDate.get(addCalendarDays(day.date, 1)) ?? null,
+      pm25_in_two_days: pm25ByDate.get(addCalendarDays(day.date, 2)) ?? null,
+    };
+  });
+}
+
+function addCalendarDays(date: string, count: number): string {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + count);
+  return value.toISOString().slice(0, 10);
+}
+
+export function linearRegression(points: Array<{ x: number; y: number }>): RegressionResult {
+  if (points.length < 2) throw new Error("Regression needs at least two complete observations.");
+  const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const meanY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  const covariance = points.reduce((sum, point) => sum + (point.x - meanX) * (point.y - meanY), 0);
+  const varianceX = points.reduce((sum, point) => sum + (point.x - meanX) ** 2, 0);
+  const varianceY = points.reduce((sum, point) => sum + (point.y - meanY) ** 2, 0);
+  if (varianceX === 0 || varianceY === 0) throw new Error("Regression needs variation in both variables.");
+
+  const slope = covariance / varianceX;
+  const r = covariance / Math.sqrt(varianceX * varianceY);
+  return {
+    slope,
+    intercept: meanY - slope * meanX,
+    r,
+    rSquared: r ** 2,
+    observations: points.length,
+  };
+}
+
+export function scatterSvg(
+  points: Array<{ x: number; y: number }>,
+  regression: RegressionResult,
+): string {
+  if (points.length === 0) throw new Error("The scatter plot needs at least one point.");
+  const width = 760;
+  const height = 460;
+  const margin = 60;
+  const xValues = points.map((point) => point.x);
+  const yValues = points.map((point) => point.y);
+  const xMin = Math.min(...xValues);
+  const xMax = Math.max(...xValues);
+  const lineY = [regression.intercept + regression.slope * xMin, regression.intercept + regression.slope * xMax];
+  const yMin = Math.min(...yValues, ...lineY);
+  const yMax = Math.max(...yValues, ...lineY);
+  const scaleX = (value: number): number => margin + (value - xMin) / (xMax - xMin) * (width - margin * 2);
+  const scaleY = (value: number): number => height - margin - (value - yMin) / (yMax - yMin) * (height - margin * 2);
+  const circles = points.map((point) =>
+    `<circle cx="${scaleX(point.x).toFixed(1)}" cy="${scaleY(point.y).toFixed(1)}" r="4" fill="#d95f02" fill-opacity="0.75"/>`
+  ).join("\n  ");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title description">
+  <title id="title">Aligned fire hotspots and next-day PM2.5</title>
+  <desc id="description">Scatter plot with an ordinary least-squares regression line.</desc>
+  <rect width="100%" height="100%" fill="white"/>
+  <line x1="${margin}" y1="${height - margin}" x2="${width - margin}" y2="${height - margin}" stroke="#333"/>
+  <line x1="${margin}" y1="${margin}" x2="${margin}" y2="${height - margin}" stroke="#333"/>
+  <line x1="${scaleX(xMin)}" y1="${scaleY(lineY[0] ?? 0)}" x2="${scaleX(xMax)}" y2="${scaleY(lineY[1] ?? 0)}" stroke="#1b9e77" stroke-width="3"/>
+  ${circles}
+  <text x="${width / 2}" y="${height - 15}" text-anchor="middle" font-family="sans-serif" font-size="14">Wind-aligned hotspot count</text>
+  <text x="18" y="${height / 2}" text-anchor="middle" transform="rotate(-90 18 ${height / 2})" font-family="sans-serif" font-size="14">Next-day PM2.5 (µg/m³)</text>
+  <text x="${width - margin}" y="${margin - 20}" text-anchor="end" font-family="sans-serif" font-size="13">r = ${regression.r.toFixed(3)}; R² = ${regression.rSquared.toFixed(3)}</text>
+</svg>\n`;
 }
