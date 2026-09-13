@@ -3,10 +3,10 @@ import "dotenv/config";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { addDays, daysInclusive, parseCsv, validateDateRange, writeCsv, type CsvRow } from "./csv.js";
+import { addDays, parseCsv, validateDateRange, writeCsv, type CsvRow } from "./csv.js";
 
 const FIRMS_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
-const SENSOR = "VIIRS_SNPP_NRT";
+const SENSOR = "VIIRS_SNPP_SP";
 const REGIONS = [
   { name: "sumatra", bbox: "95,-6,106,6" },
   { name: "kalimantan", bbox: "108,-4,119,7" },
@@ -18,6 +18,23 @@ type FirmsApiRow = Record<string, string> & {
   acq_date: string;
 };
 
+async function fetchChunk(
+  region: typeof REGIONS[number],
+  startDate: string,
+  dayRange: number,
+  mapKey: string,
+): Promise<CsvRow[]> {
+  const url = `${FIRMS_URL}/${mapKey}/${SENSOR}/${region.bbox}/${dayRange}/${startDate}`;
+  const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
+  if (!response.ok) throw new Error(`FIRMS request failed (${response.status}) for ${region.name}.`);
+
+  const text = await response.text();
+  if (!text.split(/\r?\n/, 1)[0]?.includes("latitude")) {
+    throw new Error(`FIRMS returned an unexpected response for ${region.name}. Check the MAP_KEY and date range.`);
+  }
+  return parseCsv<FirmsApiRow>(text).map((row) => ({ ...row, region: region.name }));
+}
+
 export async function fetchFirms(
   startDate: string,
   endDate: string,
@@ -26,28 +43,22 @@ export async function fetchFirms(
   validateDateRange(startDate, endDate);
   if (!mapKey) throw new Error("FIRMS_MAP_KEY is missing. Copy .env.example to .env and add your free key.");
 
-  const rows: CsvRow[] = [];
+  const requests: Array<{ region: typeof REGIONS[number]; startDate: string }> = [];
   for (const region of REGIONS) {
     let chunkStart = startDate;
     while (chunkStart <= endDate) {
-      const dayRange = Math.min(10, daysInclusive(chunkStart, endDate));
-      const url = `${FIRMS_URL}/${mapKey}/${SENSOR}/${region.bbox}/${dayRange}/${chunkStart}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`FIRMS request failed (${response.status}) for ${region.name}.`);
-
-      const text = await response.text();
-      if (!text.split(/\r?\n/, 1)[0]?.includes("latitude")) {
-        throw new Error(`FIRMS returned an unexpected response for ${region.name}. Check the MAP_KEY and date range.`);
-      }
-      const chunk = parseCsv<FirmsApiRow>(text);
-      if (chunk.length > 0 && (!chunk[0]?.latitude || !chunk[0]?.longitude || !chunk[0]?.acq_date)) {
-        throw new Error(`FIRMS returned an unexpected response for ${region.name}.`);
-      }
-      rows.push(...chunk.map((row) => ({ ...row, region: region.name })));
-      chunkStart = addDays(chunkStart, dayRange);
+      requests.push({ region, startDate: chunkStart });
+      chunkStart = addDays(chunkStart, 1);
     }
   }
 
+  const rows: CsvRow[] = [];
+  for (let index = 0; index < requests.length; index += 6) {
+    const batch = requests.slice(index, index + 6);
+    rows.push(...(await Promise.all(
+      batch.map((request) => fetchChunk(request.region, request.startDate, 1, mapKey)),
+    )).flat());
+  }
   return rows;
 }
 

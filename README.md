@@ -38,7 +38,7 @@ All sources used here are free.
 
 | Source | Purpose | Key needed? |
 | --- | --- | --- |
-| [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/api/) | VIIRS fire hotspots | Free MAP_KEY |
+| [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/api/) | Archived VIIRS Suomi-NPP fire hotspots | Free MAP_KEY |
 | [Open-Meteo Archive API](https://open-meteo.com/en/docs/historical-weather-api) | Hourly Kuala Lumpur wind | No |
 | [OpenAQ](https://docs.openaq.org/) | Daily PM2.5 for periods with monitor coverage | Free API key |
 | [Malaysia DOE data request portal](https://btm.doe.gov.my/permohonandata/udara) | September 2019 Cheras PM2.5 | Request through the public/student route |
@@ -88,7 +88,7 @@ npm run fetch:firms -- 2019-09-01 2019-09-30
 npm run fetch:wind -- 2019-09-01 2019-09-30
 ```
 
-The FIRMS script makes separate requests for the supplied Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). FIRMS limits area requests to ten days, so the script splits the month into small requests automatically.
+The FIRMS script uses the `VIIRS_SNPP_SP` standard-processing archive because the study period is historical. It makes separate requests for the supplied Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). It downloads one day at a time in small batches so large archive responses do not time out.
 
 For a period supported by your chosen OpenAQ sensor:
 

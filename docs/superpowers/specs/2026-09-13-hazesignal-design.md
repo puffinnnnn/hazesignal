@@ -12,7 +12,7 @@ The project uses Node.js 20's built-in `fetch`, `fs`, and test runner. Dependenc
 
 ## Data sources
 
-- NASA FIRMS `VIIRS_SNPP_NRT`: free MAP_KEY, requested separately for a Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). Raw rows retain a `region` column.
+- NASA FIRMS `VIIRS_SNPP_SP`: free MAP_KEY and the standard-processing archive needed for September 2019, requested separately for a Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). Raw rows retain a `region` column.
 - Open-Meteo Archive API: no key. Hourly 10 m wind at Kuala Lumpur (`3.1390, 101.6869`) is aggregated to a daily vector mean.
 - OpenAQ v3: free API key. The user supplies a Kuala Lumpur-area PM2.5 sensor ID because historical coverage and IDs can change. Daily measurements come from `/v3/sensors/{id}/days`.
 

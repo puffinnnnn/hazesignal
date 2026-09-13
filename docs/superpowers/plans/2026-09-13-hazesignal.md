@@ -28,7 +28,7 @@
 
 - [ ] Write a Node test that parses a quoted CSV value and rejects an invalid date range.
 - [ ] Run `npm test` and confirm the new assertions fail before implementation.
-- [ ] Implement native-fetch collectors with environment validation, response validation, and CSV output.
+- [ ] Implement native-fetch collectors with environment validation, response validation, five-day FIRMS request chunks, and CSV output.
 - [ ] Run `npm test` and `npm run typecheck`.
 - [ ] Commit as `feat: add environmental data fetchers`.
 
