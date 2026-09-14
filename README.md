@@ -119,7 +119,15 @@ This writes:
 - `data/combined.csv`: daily hotspot count, mean wind, alignment, and later PM2.5.
 - `data/regression.svg`: scatter plot and regression line.
 
-The notebook contains the full reasoning. Deno is installed locally by `npm install`, and the existing VS Code installation can provide the notebook interface. Register the local Deno kernel and install VS Code's official Jupyter extension once:
+The notebook contains the full reasoning. Run all of its TypeScript code from the terminal with:
+
+```powershell
+npm run notebook
+```
+
+This writes the same `data/combined.csv` and `data/regression.svg` results as the command-line analysis. You can read `notebooks/01_analysis.ipynb` in VS Code without selecting a kernel.
+
+Running cells interactively is optional. If VS Code detects Jupyter kernels correctly, register the local Deno kernel and install the official Jupyter extension once:
 
 ```powershell
 npm run notebook:install
@@ -127,7 +135,7 @@ code --install-extension ms-toolsai.jupyter
 code notebooks\01_analysis.ipynb
 ```
 
-Select the **Deno** kernel in the top-right corner if VS Code asks. Python is not required; all notebook cells remain TypeScript.
+Select the **Deno** kernel in the top-right corner if it appears. Some VS Code/Jupyter extension versions fail to list non-Python kernels; use `npm run notebook` when that happens. Python is not required.
 
 ## Wind alignment in plain language
 

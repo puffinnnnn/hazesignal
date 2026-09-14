@@ -9,6 +9,7 @@
     "fetch:wind": "tsx src/fetch_wind.ts",
     "fetch:pm25": "tsx src/fetch_pm25.ts",
     "analyze": "tsx src/run_analysis.ts",
+    "notebook": "node scripts/run_notebook.mjs",
     "test": "node --import tsx --test",
     "typecheck": "tsc --noEmit",
     "notebook:install": "deno jupyter --install"
