@@ -8,10 +8,17 @@ Do not edit measurements by hand or commit private API keys. This file will reco
 | --- | --- | --- | --- |
 | `firms_2019-09-01_2019-09-30.csv` | NASA FIRMS `VIIRS_SNPP_SP`; Sumatra `95,-6,106,6` and Kalimantan `108,-4,119,7` | 1–30 September 2019 | 14 September 2026 |
 | `wind_2019-09-01_2019-09-30.csv` | Open-Meteo Historical Weather API, Kuala Lumpur (3.1390, 101.6869), Asia/Kuala_Lumpur time | 1–30 September 2019 | 13 September 2026 |
+| `firms_2023-09-01_2023-09-30.csv` | NASA FIRMS `VIIRS_SNPP_SP`; same two regional boxes | 1–30 September 2023 | 14 September 2026 |
+| `wind_2023-09-01_2023-09-30.csv` | Open-Meteo Historical Weather API, Kuala Lumpur (3.1390, 101.6869), Asia/Kuala_Lumpur time | 1–30 September 2023 | 14 September 2026 |
+| `pm25_2023-09-01_2023-09-30.csv` | OpenAQ sensor 2085316, Kuala Lumpur, daily PM2.5 | 1–30 September 2023 | 14 September 2026 |
+| `combined.csv` | Derived from the three September 2023 files above | 1–30 September 2023 | 14 September 2026 |
+| `regression.svg` | Derived next-day wind-aligned hotspot regression | September 2023 | 14 September 2026 |
 
 The FIRMS sample contains 170,930 hotspot rows: 58,257 from the Sumatra box and 112,673 from the Kalimantan box. The MAP_KEY is not stored in the CSV.
 
-An OpenAQ sample is not included because its Kuala Lumpur station does not cover the 2019 study period. The fetch script can pull later periods using the user's free API key without putting the key in the saved file.
+The 2023 pilot contains 44,893 hotspots, 720 hourly wind readings, and 29 daily PM2.5 readings. OpenAQ has no reading for 27 September, and its 28 September daily value has 29% coverage. The API key is not stored in any CSV.
+
+A 2019 OpenAQ sample is not included because its Kuala Lumpur station does not cover the historical study period. The included 2023 sample was pulled with the user's free API key without putting the key in the saved file.
 
 OpenAQ's current Kuala Lumpur location begins reporting in November 2022, so it cannot supply the September 2019 validation series. For the study period, request daily PM2.5 observations for the Cheras station from Malaysia's Department of Environment data portal and save the approved export as `pm25_2019-09-01_2019-09-30.csv` with these columns:
 

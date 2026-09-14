@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 460" role="img" aria-labelledby="title description">
+  <title id="title">Aligned fire hotspots and next-day PM2.5</title>
+  <desc id="description">Scatter plot with an ordinary least-squares regression line.</desc>
+  <rect width="100%" height="100%" fill="white"/>
+  <line x1="60" y1="400" x2="700" y2="400" stroke="#333"/>
+  <line x1="60" y1="60" x2="60" y2="400" stroke="#333"/>
+  <line x1="60" y1="328.6826670434354" x2="700" y2="106.78226066305837" stroke="#1b9e77" stroke-width="3"/>
+  <circle cx="429.9" cy="236.9" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="125.2" cy="206.4" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="471.8" cy="204.6" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="255.8" cy="227.0" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="109.9" cy="385.7" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="116.3" cy="278.2" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="90.5" cy="256.7" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="106.8" cy="357.9" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="68.6" cy="372.3" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="94.1" cy="324.9" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="144.1" cy="210.9" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="113.3" cy="221.6" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="217.0" cy="298.9" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="184.3" cy="214.5" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="210.6" cy="219.0" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="74.5" cy="250.4" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="105.1" cy="330.3" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="122.8" cy="343.4" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="100.8" cy="365.2" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="76.3" cy="368.7" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="60.2" cy="400.0" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="60.0" cy="356.5" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="60.0" cy="381.0" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="60.0" cy="344.8" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="590.6" cy="250.4" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="639.4" cy="60.0" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="700.0" cy="87.8" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <circle cx="440.2" cy="210.9" r="4" fill="#d95f02" fill-opacity="0.75"/>
+  <text x="380" y="445" text-anchor="middle" font-family="sans-serif" font-size="14">Wind-aligned hotspot count</text>
+  <text x="18" y="230" text-anchor="middle" transform="rotate(-90 18 230)" font-family="sans-serif" font-size="14">Next-day PM2.5 (µg/m³)</text>
+  <text x="700" y="40" text-anchor="end" font-family="sans-serif" font-size="13">r = 0.758; R² = 0.574</text>
+</svg>

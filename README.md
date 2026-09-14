@@ -10,6 +10,10 @@ Most air-quality tools describe pollution after it reaches a ground monitor. Thi
 
 This is an exploratory association test. It is not a forecast service and cannot establish that a particular fire caused a particular pollution reading.
 
+## Current pilot result
+
+The complete reproducible example uses September 2023, when all three sources overlap. Across 28 next-day observations, hotspot count alone has `r = 0.637`, while wind-aligned hotspot count has `r = 0.758`. Excluding the target day with only 29% PM2.5 coverage reduces the aligned result to `r = 0.693` across 27 observations. These are in-sample correlations from one month, not validated forecast accuracy.
+
 ## What is included
 
 ```text
@@ -79,32 +83,36 @@ OPENAQ_API_KEY=your_free_openaq_key
 OPENAQ_SENSOR_ID=numeric_pm25_sensor_id
 ```
 
-Only `FIRMS_MAP_KEY` is needed for the September 2019 fire pull. The OpenAQ values are optional if you use the DOE PM2.5 export. `.env` is ignored by Git.
+Only `FIRMS_MAP_KEY` is needed for a fire pull. The OpenAQ values are optional if you use a DOE PM2.5 export. `.env` is ignored by Git.
 
 ## Fetch the study data
+
+```bash
+npm run fetch:firms -- 2023-09-01 2023-09-30
+npm run fetch:wind -- 2023-09-01 2023-09-30
+npm run fetch:pm25 -- 2023-09-01 2023-09-30
+```
+
+The FIRMS script uses the `VIIRS_SNPP_SP` standard-processing archive because the study period is historical. It makes separate requests for the supplied Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). It downloads one day at a time in small batches so large archive responses do not time out.
+
+The matching September 2023 samples are included, so these downloads are only needed when refreshing the data. To collect the intended September 2019 fire and wind inputs while the DOE PM2.5 request is pending:
 
 ```bash
 npm run fetch:firms -- 2019-09-01 2019-09-30
 npm run fetch:wind -- 2019-09-01 2019-09-30
 ```
 
-The FIRMS script uses the `VIIRS_SNPP_SP` standard-processing archive because the study period is historical. It makes separate requests for the supplied Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). It downloads one day at a time in small batches so large archive responses do not time out.
-
-For a period supported by your chosen OpenAQ sensor:
-
-```bash
-npm run fetch:pm25 -- 2023-09-01 2023-09-30
-```
-
 Each command prints the exact CSV path it creates. HTTP failures and missing keys stop with a direct explanation; the project does not route requests through a third-party proxy.
 
 ## Run the analysis
 
-After all three matching CSV files exist:
+The included September 2023 files are the default inputs:
 
 ```bash
 npm run analyze
 ```
+
+You can pass three other matching CSV paths after `--` to analyse a different period.
 
 This writes:
 
@@ -139,7 +147,9 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 
 ## Limitations
 
-- One severe month is too small to establish a reliable warning model.
+- One month is too small to establish a reliable warning model.
+- The September 2023 OpenAQ series is missing 27 September, and 28 September has only 29% daily coverage.
+- The reported correlations are fitted and measured on the same 28 observations, so they do not show performance on unseen dates.
 - A regional centre and Kuala Lumpur's local 10 m wind simplify a long, changing transport path.
 - Hotspot count treats a small fire and an intense peat fire equally. Fire radiative power would add useful information.
 - Clouds, missed satellite passes, and monitor gaps can remove observations.
