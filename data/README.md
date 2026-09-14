@@ -14,9 +14,9 @@ Do not edit measurements by hand or commit private API keys. This file will reco
 | `combined.csv` | Derived from the three September 2023 files above | 1–30 September 2023 | 14 September 2026 |
 | `regression.svg` | Derived next-day wind-aligned hotspot regression | September 2023 | 14 September 2026 |
 
-The FIRMS sample contains 170,930 hotspot rows: 58,257 from the Sumatra box and 112,673 from the Kalimantan box. The MAP_KEY is not stored in the CSV.
+The FIRMS 2019 sample contains 171,521 hotspot rows: 58,370 from the Sumatra box and 113,151 from the Kalimantan box. The MAP_KEY is not stored in the CSV. The file covers 1–30 September in Malaysia time; the fetcher also queried the preceding UTC day so the first local day is complete.
 
-The 2023 pilot contains 44,893 hotspots, 720 hourly wind readings, and 29 daily PM2.5 readings. OpenAQ has no reading for 27 September, and its 28 September daily value has 29% coverage. The API key is not stored in any CSV.
+The 2023 pilot contains 44,992 hotspots, 720 hourly wind readings, and 29 daily PM2.5 readings. OpenAQ has no reading for 27 September, and its 28 September daily value has 29% coverage. The API key is not stored in any CSV.
 
 A 2019 OpenAQ sample is not included because its Kuala Lumpur station does not cover the historical study period. The included 2023 sample was pulled with the user's free API key without putting the key in the saved file.
 

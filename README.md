@@ -12,7 +12,7 @@ This is an exploratory association test. It is not a forecast service and cannot
 
 ## Current pilot result
 
-The complete reproducible example uses September 2023, when all three sources overlap. Across 28 next-day observations, hotspot count alone has `r = 0.637`, while wind-aligned hotspot count has `r = 0.758`. Excluding the target day with only 29% PM2.5 coverage reduces the aligned result to `r = 0.693` across 27 observations. These are in-sample correlations from one month, not validated forecast accuracy.
+The complete reproducible example uses September 2023, when all three sources overlap. Across 28 next-day observations, hotspot count alone has `r = 0.645`, while wind-aligned hotspot count has `r = 0.757`. Excluding the target day with only 29% PM2.5 coverage reduces the aligned result to `r = 0.696` across 27 observations. These are in-sample correlations from one month, not validated forecast accuracy.
 
 ## What is included
 
@@ -93,7 +93,7 @@ npm run fetch:wind -- 2023-09-01 2023-09-30
 npm run fetch:pm25 -- 2023-09-01 2023-09-30
 ```
 
-The FIRMS script uses the `VIIRS_SNPP_SP` standard-processing archive because the study period is historical. It makes separate requests for the supplied Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). It downloads one day at a time in small batches so large archive responses do not time out.
+The FIRMS script uses the `VIIRS_SNPP_SP` standard-processing archive because the study period is historical. It makes separate requests for the supplied Sumatra box (`95,-6,106,6`) and a Kalimantan box (`108,-4,119,7`). It downloads one day at a time in small batches so large archive responses do not time out. FIRMS acquisition timestamps are UTC; the analysis converts them to Malaysia time (UTC+8) before grouping detections by calendar day.
 
 The matching September 2023 samples are included, so these downloads are only needed when refreshing the data. To collect the intended September 2019 fire and wind inputs while the DOE PM2.5 request is pending:
 
@@ -125,7 +125,7 @@ The notebook contains the full reasoning. Run all of its TypeScript code from th
 npm run notebook
 ```
 
-This writes the same `data/combined.csv` and `data/regression.svg` results as the command-line analysis. You can read `notebooks/01_analysis.ipynb` in VS Code without selecting a kernel.
+This repeats the same calculations and refreshes `data/regression.svg`. Use `npm run analyze` when you also want to rewrite `data/combined.csv`. You can read `notebooks/01_analysis.ipynb` in VS Code without selecting a kernel.
 
 Running cells interactively is optional. If VS Code detects Jupyter kernels correctly, register the local Deno kernel and install the official Jupyter extension once:
 
@@ -159,11 +159,13 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 - The September 2023 OpenAQ series is missing 27 September, and 28 September has only 29% daily coverage.
 - The reported correlations are fitted and measured on the same 28 observations, so they do not show performance on unseen dates.
 - A regional centre and Kuala Lumpur's local 10 m wind simplify a long, changing transport path.
+- The rectangular fire boxes can include nearby territories and islands; exact administrative polygons would isolate Indonesian Sumatra and Kalimantan more precisely.
 - Hotspot count treats a small fire and an intense peat fire equally. Fire radiative power would add useful information.
 - Clouds, missed satellite passes, and monitor gaps can remove observations.
 - Rainfall, humidity, boundary-layer height, vertical wind, fire duration, peat depth, and local emissions are omitted.
 - Kalimantan smoke more directly affects East Malaysia; combining it with a Kuala Lumpur outcome may weaken the relationship.
 - Linear regression assumes a straight-line relationship and does not prove causation.
+- The pilot uses complete daily wind averages and next-day PM2.5 levels. An operational warning test would use only information available at prediction time and compare against a current-PM2.5 persistence baseline.
 
 A fuller study should cover several haze and non-haze seasons, compare multiple Malaysian stations, add rainfall and humidity, test fire radiative power, and evaluate predictions on dates not used to fit the model.
 

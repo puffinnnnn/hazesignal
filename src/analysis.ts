@@ -15,6 +15,7 @@ export interface DailyWind extends HourlyWind {
 
 export interface FireHotspot {
   acq_date: string;
+  acq_time?: string;
   region: keyof typeof SOURCE_CENTROIDS;
 }
 
@@ -98,7 +99,10 @@ export function combineDailyData(
 ): CombinedDay[] {
   const pm25ByDate = new Map(pm25.map((row) => [row.date, row.pm25_ug_m3]));
   const firesByDate = new Map<string, FireHotspot[]>();
-  for (const fire of hotspots) firesByDate.set(fire.acq_date, [...(firesByDate.get(fire.acq_date) ?? []), fire]);
+  for (const fire of hotspots) {
+    const date = malaysiaFireDate(fire);
+    firesByDate.set(date, [...(firesByDate.get(date) ?? []), fire]);
+  }
 
   return wind.map((day) => {
     const fires = firesByDate.get(day.date) ?? [];
@@ -118,6 +122,19 @@ export function combineDailyData(
       pm25_in_two_days: pm25ByDate.get(addCalendarDays(day.date, 2)) ?? null,
     };
   });
+}
+
+export function malaysiaFireDate(fire: FireHotspot): string {
+  if (fire.acq_time == null) return fire.acq_date;
+  const time = fire.acq_time.padStart(4, "0");
+  const hours = Number(time.slice(0, 2));
+  const minutes = Number(time.slice(2));
+  if (!/^\d{4}$/.test(time) || hours > 23 || minutes > 59) {
+    throw new Error(`Invalid FIRMS acquisition time: ${fire.acq_time}`);
+  }
+  const utc = Date.parse(`${fire.acq_date}T${time.slice(0, 2)}:${time.slice(2)}:00Z`);
+  if (!Number.isFinite(utc)) throw new Error(`Invalid FIRMS acquisition date: ${fire.acq_date}`);
+  return new Date(utc + 8 * 60 * 60 * 1_000).toISOString().slice(0, 10);
 }
 
 function addCalendarDays(date: string, count: number): string {

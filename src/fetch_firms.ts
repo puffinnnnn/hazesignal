@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { addDays, parseCsv, validateDateRange, writeCsv, type CsvRow } from "./csv.js";
+import { malaysiaFireDate } from "./analysis.js";
 
 const FIRMS_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
 const SENSOR = "VIIRS_SNPP_SP";
@@ -17,6 +18,7 @@ type FirmsApiRow = Record<string, string> & {
   longitude: string;
   acq_date: string;
 };
+type FirmsRow = FirmsApiRow & { region: typeof REGIONS[number]["name"] };
 
 export async function fetchWithRetry(
   url: string,
@@ -26,13 +28,15 @@ export async function fetchWithRetry(
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      return await request(url, { signal: AbortSignal.timeout(60_000) });
+      const response = await request(url, { signal: AbortSignal.timeout(60_000) });
+      if (response.status !== 408 && response.status !== 429 && response.status < 500) return response;
+      lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {
       lastError = error;
-      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
     }
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
   }
-  throw new Error(`FIRMS network request failed after 3 attempts: ${lastError instanceof Error ? lastError.message : lastError}`);
+  throw new Error(`FIRMS request failed after 3 attempts: ${lastError instanceof Error ? lastError.message : lastError}`);
 }
 
 async function fetchChunk(
@@ -40,11 +44,12 @@ async function fetchChunk(
   startDate: string,
   dayRange: number,
   mapKey: string,
-): Promise<CsvRow[]> {
+  request: typeof fetch,
+): Promise<FirmsRow[]> {
   const url = `${FIRMS_URL}/${mapKey}/${SENSOR}/${region.bbox}/${dayRange}/${startDate}`;
   let response: Response;
   try {
-    response = await fetchWithRetry(url);
+    response = await fetchWithRetry(url, request);
   } catch (error) {
     throw new Error(`FIRMS request failed for ${region.name} on ${startDate}: ${error instanceof Error ? error.message : error}`);
   }
@@ -61,27 +66,31 @@ export async function fetchFirms(
   startDate: string,
   endDate: string,
   mapKey = process.env.FIRMS_MAP_KEY,
+  request: typeof fetch = fetch,
 ): Promise<CsvRow[]> {
   validateDateRange(startDate, endDate);
   if (!mapKey) throw new Error("FIRMS_MAP_KEY is missing. Copy .env.example to .env and add your free key.");
 
   const requests: Array<{ region: typeof REGIONS[number]; startDate: string }> = [];
   for (const region of REGIONS) {
-    let chunkStart = startDate;
+    let chunkStart = addDays(startDate, -1);
     while (chunkStart <= endDate) {
       requests.push({ region, startDate: chunkStart });
       chunkStart = addDays(chunkStart, 1);
     }
   }
 
-  const rows: CsvRow[] = [];
+  const rows: FirmsRow[] = [];
   for (let index = 0; index < requests.length; index += 6) {
     const batch = requests.slice(index, index + 6);
     rows.push(...(await Promise.all(
-      batch.map((request) => fetchChunk(request.region, request.startDate, 1, mapKey)),
+      batch.map((chunk) => fetchChunk(chunk.region, chunk.startDate, 1, mapKey, request)),
     )).flat());
   }
-  return rows;
+  return rows.flatMap((row) => {
+    const localDate = malaysiaFireDate(row);
+    return localDate < startDate || localDate > endDate ? [] : [{ ...row, local_date: localDate }];
+  });
 }
 
 async function main(): Promise<void> {
