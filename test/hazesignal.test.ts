@@ -158,11 +158,13 @@ test("current report explains readings without claiming a forecast", () => {
     ],
   });
 
-  assert.match(report, /TODAY: UNHEALTHY PARTICLE POLLUTION/);
-  assert.match(report, /24-hour average: 80 µg\/m³ from 23 hourly readings/);
-  assert.match(report, /TOMORROW: WARNING CLUE PRESENT/);
-  assert.match(report, /PM2\.5 means.*2\.5 micrometres/i);
-  assert.match(report, /incomplete combustion/i);
+  assert.match(report, /HAZESIGNAL — KUALA LUMPUR/);
+  assert.match(report, /AIR TODAY: UNHEALTHY/);
+  assert.match(report, /Unhealthy\s+50\.5–150\.4\s+← CURRENT: 80/);
+  assert.match(report, /80 is unhealthy\. 160 is very unhealthy\./i);
+  assert.match(report, /NEXT 1–2 DAYS: WARNING CLUE PRESENT/);
+  assert.match(report, /ACTION/);
+  assert.doesNotMatch(report, /incomplete combustion/i);
 });
 
 test("PM2.5 category follows Malaysia DOE concentration bands", () => {

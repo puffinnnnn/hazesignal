@@ -42,32 +42,51 @@ interface Pm25Category {
   action: string;
 }
 
-export function pm25Category(value: number): Pm25Category {
-  if (value <= 12) return {
+const PM25_BANDS = [
+  {
+    max: 12,
+    label: "Good",
+    range: "0–12",
     name: "GOOD",
     meaning: "The amount of fine-particle pollution is low.",
     action: "Normal outdoor activities are generally reasonable. Check APIMS if you are especially sensitive.",
-  };
-  if (value <= 50.4) return {
+  },
+  {
+    max: 50.4,
+    label: "Moderate",
+    range: "12.1–50.4",
     name: "MODERATE",
     meaning: "Fine-particle pollution is raised, although most people may not notice effects.",
     action: "Monitor APIMS. If you are sensitive to pollution and feel symptoms, reduce long or strenuous outdoor activity.",
-  };
-  if (value <= 150.4) return {
+  },
+  {
+    max: 150.4,
+    label: "Unhealthy",
+    range: "50.5–150.4",
     name: "UNHEALTHY",
     meaning: "The monitor is showing a high amount of fine-particle pollution.",
     action: "Reduce long or strenuous outdoor activity. Children, older adults, and people with heart, lung, or asthma conditions should be especially cautious.",
-  };
-  if (value <= 250.4) return {
+  },
+  {
+    max: 250.4,
+    label: "Very unhealthy",
+    range: "150.5–250.4",
     name: "VERY UNHEALTHY",
     meaning: "Fine-particle pollution is very high and may affect everyone.",
     action: "Avoid strenuous outdoor activity and reduce time outdoors. Follow current APIMS health advice.",
-  };
-  return {
+  },
+  {
+    max: Infinity,
+    label: "Hazardous",
+    range: "above 250.4",
     name: "HAZARDOUS",
     meaning: "Fine-particle pollution is extremely high.",
     action: "Avoid outdoor activity where possible and follow official health or emergency instructions immediately.",
-  };
+  },
+] as const;
+
+export function pm25Category(value: number): Pm25Category {
+  return PM25_BANDS.find((band) => value <= band.max) ?? PM25_BANDS.at(-1)!;
 }
 
 function localTime(iso: string): string {
@@ -82,47 +101,50 @@ export function formatCurrentReport(report: CurrentReport): string {
   const strongest = report.fires.reduce((best, fire) => fire.alignment > best.alignment ? fire : best);
   const hasClue = strongest.count > 0 && strongest.alignment >= 0.5;
   const category = report.pm25.average24h == null ? null : pm25Category(report.pm25.average24h);
-  const today = category ? `${category.name} PARTICLE POLLUTION` : "NOT ENOUGH 24-HOUR DATA";
+  const today = category?.name ?? "NOT ENOUGH DATA";
   const tomorrow = hasClue ? "WARNING CLUE PRESENT" : "NO CLEAR WARNING CLUE";
-  const fireLines = report.fires.map((fire) =>
-    `- ${fire.region[0]?.toUpperCase()}${fire.region.slice(1)}: ${fire.count} satellite detections; wind match ${Math.round(fire.alignment * 100)}%`
-  ).join("\n");
-  const airExplanation = category
-    ? `24-hour average: ${report.pm25.average24h} ${report.pm25.unit} from ${report.pm25.hoursUsed} hourly readings
-Meaning: ${category.meaning}
-This is a PM2.5-only estimate using Malaysia DOE concentration bands. It is not the official API, which also checks other pollutants.`
-    : `Only ${report.pm25.hoursUsed} of the last 24 hourly readings were available, so HazeSignal will not guess an air-quality category.`;
+  const scale = PM25_BANDS.map((band) => {
+    const marker = band.name === category?.name ? `   ← CURRENT: ${report.pm25.average24h}` : "";
+    return `${band.label.padEnd(16)} ${band.range.padEnd(12)}${marker}`;
+  }).join("\n");
+  const airReading = category
+    ? `24-hour PM2.5 average: ${report.pm25.average24h} ${report.pm25.unit}`
+    : `Only ${report.pm25.hoursUsed} of 24 hourly readings were available, so no category was estimated.`;
   const clueExplanation = hasClue
-    ? `Fires were detected and the current wind points roughly from ${strongest.region[0]?.toUpperCase()}${strongest.region.slice(1)} toward Kuala Lumpur.
-This means smoke transport is possible. The research is not yet strong enough to say that tomorrow will be dangerous.`
-    : "The recent fire detections and current wind do not form a clear incoming-haze clue. Conditions can still change.";
+    ? "Recent fires and wind direction could allow smoke to travel toward Kuala Lumpur."
+    : "Recent fire detections and current wind do not form a clear incoming-haze clue.";
   const action = category?.action ?? "Check APIMS for the official current category before making outdoor plans.";
+  const sumatra = report.fires.find((fire) => fire.region === "sumatra")?.count ?? 0;
+  const kalimantan = report.fires.find((fire) => fire.region === "kalimantan")?.count ?? 0;
+  const strongestName = `${strongest.region[0]?.toUpperCase()}${strongest.region.slice(1)}`;
 
-  return `HAZESIGNAL — PLAIN-LANGUAGE CHECK
+  return `HAZESIGNAL — KUALA LUMPUR
 Checked: ${localTime(report.checkedAt)}
 
-TODAY: ${today}
-Location: ${report.pm25.place}
-${airExplanation}
+AIR TODAY: ${today}
+${airReading}
 
-TOMORROW: ${tomorrow} — NOT A FORECAST
+MALAYSIA PM2.5 SCALE (24-HOUR AVERAGE, ${report.pm25.unit})
+${scale}
+
+80 is unhealthy. 160 is very unhealthy.
+“Good” is the lowest band, but it does not mean completely risk-free.
+This is a PM2.5-only estimate, not the official Malaysian API.
+
+NEXT 1–2 DAYS: ${tomorrow}
 ${clueExplanation}
+The research cannot yet reliably predict how severe the haze will be.
 
-WHAT YOU SHOULD DO
+ACTION
 ${action}
 Official Malaysian reading: https://apims.doe.gov.my/
 
-WHY THESE NUMBERS MATTER
-PM2.5 means airborne particles no wider than about 2.5 micrometres. They are small enough to travel deep into the lungs.
-The unit ${report.pm25.unit} means micrograms of particles in one cubic metre of air. A microgram is one-millionth of a gram; a cubic metre is a 1 m × 1 m × 1 m cube.
-Peat and plant material can burn through incomplete combustion, producing soot, ash, and organic aerosol particles. Wind can keep these materials suspended and carry them over long distances.
+EVIDENCE
+PM2.5 monitor: ${report.pm25.place} (${report.pm25.hoursUsed} hourly readings)
+Fire detections: Sumatra ${sumatra} | Kalimantan ${kalimantan}
+Strongest wind match: ${strongestName} ${Math.round(strongest.alignment * 100)}%
 
-DETAILS FOR CHECKING THE RESULT
-Latest PM2.5 reading: ${report.pm25.value} ${report.pm25.unit} at ${localTime(report.pm25.measuredAt)}
-Hotspots below are satellite detections from the last two days, not separate fires and not direct haze measurements:
-${fireLines}
-Wind now: ${report.wind.speed} km/h, coming from ${report.wind.direction}°
-Wind match is 100% when air points directly from the region toward Kuala Lumpur, and 0% when it moves sideways or away.`;
+Hotspots are satellite detections, not separate fires. See README.md for definitions and scientific details.`;
 }
 
 async function fetch24HourAverage(
