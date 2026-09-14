@@ -11,8 +11,7 @@
     "analyze": "tsx src/run_analysis.ts",
     "notebook": "node scripts/run_notebook.mjs",
     "test": "node --import tsx --test",
-    "typecheck": "tsc --noEmit",
-    "notebook:install": "deno jupyter --install"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "csv-parse": "^7.0.2",

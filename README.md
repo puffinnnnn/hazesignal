@@ -125,17 +125,7 @@ The notebook contains the full reasoning. Run all of its TypeScript code from th
 npm run notebook
 ```
 
-This repeats the same calculations and refreshes `data/regression.svg`. Use `npm run analyze` when you also want to rewrite `data/combined.csv`. You can read `notebooks/01_analysis.ipynb` in VS Code without selecting a kernel.
-
-Running cells interactively is optional. If VS Code detects Jupyter kernels correctly, register the local Deno kernel and install the official Jupyter extension once:
-
-```powershell
-npm run notebook:install
-code --install-extension ms-toolsai.jupyter
-code notebooks\01_analysis.ipynb
-```
-
-Select the **Deno** kernel in the top-right corner if it appears. Some VS Code/Jupyter extension versions fail to list non-Python kernels; use `npm run notebook` when that happens. Python is not required.
+This repeats the same calculations and refreshes `data/regression.svg`. Use `npm run analyze` when you also want to rewrite `data/combined.csv`. You can read `notebooks/01_analysis.ipynb` in VS Code without selecting a kernel or pressing **Run All**. Python and a system-wide Deno installation are not required.
 
 ## Wind alignment in plain language
 
