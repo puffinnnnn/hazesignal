@@ -8,6 +8,7 @@
     "fetch:firms": "tsx src/fetch_firms.ts",
     "fetch:wind": "tsx src/fetch_wind.ts",
     "fetch:pm25": "tsx src/fetch_pm25.ts",
+    "current": "tsx src/current.ts",
     "analyze": "tsx src/run_analysis.ts",
     "notebook": "node scripts/run_notebook.mjs",
     "test": "node --import tsx --test",

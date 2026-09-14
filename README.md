@@ -10,9 +10,39 @@ Most air-quality tools describe pollution after it reaches a ground monitor. Thi
 
 This is an exploratory association test. It is not a forecast service and cannot establish that a particular fire caused a particular pollution reading.
 
+## The idea in simple words
+
+HazeSignal has two separate jobs:
+
+1. **Check the air now.** A ground monitor measures PM2.5, the tiny particles found in smoke and other air pollution.
+2. **Look for an early clue.** A satellite finds unusually hot places that may be fires. If there are fires and the wind points from them toward Kuala Lumpur, smoke could follow later.
+
+A hotspot is one satellite detection, not one whole fire and not a haze reading. The same large fire can produce several hotspot detections.
+
+September 2023 is a past test used to see whether the early clue was useful. It is not the project's current reading.
+
+## Check current conditions
+
+After completing the setup below, run:
+
+```powershell
+npm run current
+```
+
+This prints:
+
+- the latest available PM2.5 reading from a nearby Kuala Lumpur OpenAQ monitor;
+- NASA fire hotspots detected in the last two days;
+- today's Kuala Lumpur wind; and
+- whether that wind points roughly from Sumatra or Kalimantan toward Kuala Lumpur.
+
+The command automatically chooses a nearby PM2.5 sensor updated within the last 48 hours. `OPENAQ_SENSOR_ID` is not needed for this current check. The fire-and-wind message is a clue, not a promise that haze will arrive. For Malaysia's official current air-pollution status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
+
 ## Current pilot result
 
 The complete reproducible example uses September 2023, when all three sources overlap. Across 28 next-day observations, hotspot count alone has `r = 0.645`, while wind-aligned hotspot count has `r = 0.757`. Excluding the target day with only 29% PM2.5 coverage reduces the aligned result to `r = 0.696` across 27 observations. These are in-sample correlations from one month, not validated forecast accuracy.
+
+You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.757` does **not** mean the project is 75.7% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
 
 ## What is included
 
@@ -22,6 +52,7 @@ hazesignal/
 ├── notebooks/01_analysis.ipynb
 ├── src/
 │   ├── analysis.ts
+│   ├── current.ts
 │   ├── csv.ts
 │   ├── fetch_firms.ts
 │   ├── fetch_pm25.ts

@@ -11,6 +11,7 @@ import {
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
+import { formatCurrentReport } from "../src/current.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -137,4 +138,20 @@ test("fetchFirms includes the previous UTC day and keeps only Malaysia study dat
   assert.ok(requestedDates.includes("2019-08-31"));
   assert.equal(rows.length, 4);
   assert.ok(rows.every((row) => row.local_date === "2019-09-01"));
+});
+
+test("current report explains readings without claiming a forecast", () => {
+  const report = formatCurrentReport({
+    checkedAt: "2026-09-14T14:00:00.000Z",
+    pm25: { value: 18.4, unit: "µg/m³", place: "KLCC", measuredAt: "2026-09-14T13:00:00.000Z" },
+    wind: { speed: 9.2, direction: 225 },
+    fires: [
+      { region: "sumatra", count: 120, alignment: 0.9 },
+      { region: "kalimantan", count: 40, alignment: 0 },
+    ],
+  });
+
+  assert.match(report, /PM2\.5 now: 18\.4 µg\/m³ at KLCC/);
+  assert.match(report, /Sumatra: 120 recent hotspots; wind match 90%/);
+  assert.match(report, /warning clue.*not a forecast/i);
 });

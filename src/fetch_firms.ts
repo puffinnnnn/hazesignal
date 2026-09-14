@@ -6,9 +6,9 @@ import { pathToFileURL } from "node:url";
 import { addDays, parseCsv, validateDateRange, writeCsv, type CsvRow } from "./csv.js";
 import { malaysiaFireDate } from "./analysis.js";
 
-const FIRMS_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
+export const FIRMS_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv";
 const SENSOR = "VIIRS_SNPP_SP";
-const REGIONS = [
+export const FIRE_REGIONS = [
   { name: "sumatra", bbox: "95,-6,106,6" },
   { name: "kalimantan", bbox: "108,-4,119,7" },
 ] as const;
@@ -18,7 +18,7 @@ type FirmsApiRow = Record<string, string> & {
   longitude: string;
   acq_date: string;
 };
-type FirmsRow = FirmsApiRow & { region: typeof REGIONS[number]["name"] };
+type FirmsRow = FirmsApiRow & { region: typeof FIRE_REGIONS[number]["name"] };
 
 export async function fetchWithRetry(
   url: string,
@@ -40,7 +40,7 @@ export async function fetchWithRetry(
 }
 
 async function fetchChunk(
-  region: typeof REGIONS[number],
+  region: typeof FIRE_REGIONS[number],
   startDate: string,
   dayRange: number,
   mapKey: string,
@@ -71,8 +71,8 @@ export async function fetchFirms(
   validateDateRange(startDate, endDate);
   if (!mapKey) throw new Error("FIRMS_MAP_KEY is missing. Copy .env.example to .env and add your free key.");
 
-  const requests: Array<{ region: typeof REGIONS[number]; startDate: string }> = [];
-  for (const region of REGIONS) {
+  const requests: Array<{ region: typeof FIRE_REGIONS[number]; startDate: string }> = [];
+  for (const region of FIRE_REGIONS) {
     let chunkStart = addDays(startDate, -1);
     while (chunkStart <= endDate) {
       requests.push({ region, startDate: chunkStart });
