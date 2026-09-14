@@ -11,7 +11,7 @@ import {
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
-import { formatCurrentReport } from "../src/current.js";
+import { formatCurrentReport, pm25Category } from "../src/current.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -143,7 +143,14 @@ test("fetchFirms includes the previous UTC day and keeps only Malaysia study dat
 test("current report explains readings without claiming a forecast", () => {
   const report = formatCurrentReport({
     checkedAt: "2026-09-14T14:00:00.000Z",
-    pm25: { value: 18.4, unit: "µg/m³", place: "KLCC", measuredAt: "2026-09-14T13:00:00.000Z" },
+    pm25: {
+      value: 122.2,
+      average24h: 80,
+      hoursUsed: 23,
+      unit: "µg/m³",
+      place: "KLCC",
+      measuredAt: "2026-09-14T13:00:00.000Z",
+    },
     wind: { speed: 9.2, direction: 225 },
     fires: [
       { region: "sumatra", count: 120, alignment: 0.9 },
@@ -151,7 +158,17 @@ test("current report explains readings without claiming a forecast", () => {
     ],
   });
 
-  assert.match(report, /PM2\.5 now: 18\.4 µg\/m³ at KLCC/);
-  assert.match(report, /Sumatra: 120 recent hotspots; wind match 90%/);
-  assert.match(report, /warning clue.*not a forecast/i);
+  assert.match(report, /TODAY: UNHEALTHY PARTICLE POLLUTION/);
+  assert.match(report, /24-hour average: 80 µg\/m³ from 23 hourly readings/);
+  assert.match(report, /TOMORROW: WARNING CLUE PRESENT/);
+  assert.match(report, /PM2\.5 means.*2\.5 micrometres/i);
+  assert.match(report, /incomplete combustion/i);
+});
+
+test("PM2.5 category follows Malaysia DOE concentration bands", () => {
+  assert.equal(pm25Category(12).name, "GOOD");
+  assert.equal(pm25Category(30).name, "MODERATE");
+  assert.equal(pm25Category(80).name, "UNHEALTHY");
+  assert.equal(pm25Category(200).name, "VERY UNHEALTHY");
+  assert.equal(pm25Category(300).name, "HAZARDOUS");
 });

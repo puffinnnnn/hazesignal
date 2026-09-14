@@ -29,14 +29,22 @@ After completing the setup below, run:
 npm run current
 ```
 
-This prints:
+The report answers three questions first:
 
-- the latest available PM2.5 reading from a nearby Kuala Lumpur OpenAQ monitor;
-- NASA fire hotspots detected in the last two days;
-- today's Kuala Lumpur wind; and
-- whether that wind points roughly from Sumatra or Kalimantan toward Kuala Lumpur.
+- **TODAY:** Is fine-particle pollution good, moderate, unhealthy, very unhealthy, or hazardous at the selected monitor?
+- **TOMORROW:** Is the fire-and-wind warning clue present? This is still labelled as a clue rather than a forecast.
+- **WHAT YOU SHOULD DO:** What simple precaution fits the current particle category, plus a link to official APIMS advice.
 
-The command automatically chooses a nearby PM2.5 sensor updated within the last 48 hours. `OPENAQ_SENSOR_ID` is not needed for this current check. The fire-and-wind message is a clue, not a promise that haze will arrive. For Malaysia's official current air-pollution status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
+The command automatically chooses a nearby PM2.5 sensor updated within the last 48 hours. `OPENAQ_SENSOR_ID` is not needed for this current check. It averages the most recent 24 hours and only assigns a category when at least 18 hourly readings are available. The category uses the [Malaysia DOE PM2.5 concentration bands](https://eqms.doe.gov.my/Documents/APIMS/API_Calculation.pdf), but it is a PM2.5-only estimate rather than the official API, which checks several pollutants. For Malaysia's official current status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
+
+### What the terms mean
+
+- **PM2.5:** airborne solid particles and liquid droplets no wider than about 2.5 micrometres. These particles are small enough to travel deep into the lungs.
+- **µg/m³:** micrograms of particles in one cubic metre of air. A microgram is one-millionth of a gram; a cubic metre is a cube measuring one metre on each side.
+- **Hotspot:** one place where a satellite detected unusual heat. It is not necessarily a separate fire, and it is not a direct measurement of haze.
+- **Wind match:** how closely the current wind points from a fire region toward Kuala Lumpur. `100%` is directly aligned; `0%` is sideways or away.
+
+Peat and plant material can undergo incomplete combustion, producing soot, ash, and condensed organic compounds. These fine solid particles and liquid aerosols can remain suspended in the atmosphere. Wind then transports the particle-containing air mass. This materials-science link explains why the project measures fires first, transport second, and PM2.5 at the destination last.
 
 ## Current pilot result
 
