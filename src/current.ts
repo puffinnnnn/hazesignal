@@ -3,7 +3,17 @@ import "dotenv/config";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { alignmentScore, initialBearing, KUALA_LUMPUR, SOURCE_CENTROIDS } from "./analysis.js";
+import {
+  alignmentScore,
+  dailyWind,
+  initialBearing,
+  KUALA_LUMPUR,
+  malaysiaFireDate,
+  SOURCE_CENTROIDS,
+  type DailyWind,
+  type FireHotspot,
+  type HourlyWind,
+} from "./analysis.js";
 import { parseCsv, readCsv } from "./csv.js";
 import { FIRE_REGIONS, FIRMS_URL, fetchWithRetry } from "./fetch_firms.js";
 
@@ -121,6 +131,7 @@ function localTime(iso: string): string {
 }
 
 export function formatCurrentReport(report: CurrentReport): string {
+  if (!(report.highSignalThreshold > 0)) throw new Error("The historical high-signal threshold must be positive.");
   const strongest = report.fires.reduce((best, fire) => fire.alignment > best.alignment ? fire : best);
   const signal = report.fires.reduce((sum, fire) => sum + fire.count * fire.alignment, 0);
   const hasClue = signal >= report.highSignalThreshold;
@@ -260,30 +271,65 @@ async function fetchCurrentPm25(apiKey: string): Promise<CurrentReport["pm25"]> 
   };
 }
 
-async function fetchCurrentWind(): Promise<CurrentReport["wind"]> {
+async function fetchCurrentWind(): Promise<{ current: CurrentReport["wind"]; daily: DailyWind[] }> {
   const query = new URLSearchParams({
     latitude: String(KUALA_LUMPUR.latitude),
     longitude: String(KUALA_LUMPUR.longitude),
     current: "wind_speed_10m,wind_direction_10m",
+    hourly: "wind_speed_10m,wind_direction_10m",
+    past_days: "1",
+    forecast_days: "1",
+    timezone: "Asia/Kuala_Lumpur",
   });
   const response = await fetch(`https://api.open-meteo.com/v1/forecast?${query}`);
   if (!response.ok) throw new Error(`Open-Meteo request failed (${response.status}).`);
-  const current = (await response.json() as { current?: { wind_speed_10m?: number; wind_direction_10m?: number } }).current;
+  const weather = await response.json() as {
+    current?: { time?: string; wind_speed_10m?: number; wind_direction_10m?: number };
+    hourly?: { time?: string[]; wind_speed_10m?: number[]; wind_direction_10m?: number[] };
+  };
+  const current = weather.current;
   if (typeof current?.wind_speed_10m !== "number" || typeof current.wind_direction_10m !== "number") {
     throw new Error("Open-Meteo returned an unexpected wind response.");
   }
-  return { speed: current.wind_speed_10m, direction: current.wind_direction_10m };
+  const times = weather.hourly?.time ?? [];
+  const speeds = weather.hourly?.wind_speed_10m ?? [];
+  const directions = weather.hourly?.wind_direction_10m ?? [];
+  const hours: HourlyWind[] = times.flatMap((time, index) =>
+    time <= (current.time ?? "") && typeof speeds[index] === "number" && typeof directions[index] === "number"
+      ? [{ date: time.slice(0, 10), wind_speed_kmh: speeds[index]!, wind_direction_degrees: directions[index]! }]
+      : []
+  );
+  if (hours.length === 0) throw new Error("Open-Meteo returned no recent hourly wind observations.");
+  return {
+    current: { speed: current.wind_speed_10m, direction: current.wind_direction_10m },
+    daily: dailyWind(hours),
+  };
 }
 
-async function fetchCurrentFires(mapKey: string, windDirection: number): Promise<CurrentReport["fires"]> {
+export function summariseCurrentFires(
+  rows: FireHotspot[],
+  region: RegionName,
+  winds: DailyWind[],
+): CurrentReport["fires"][number] {
+  const source = SOURCE_CENTROIDS[region];
+  const route = initialBearing(source.latitude, source.longitude, KUALA_LUMPUR.latitude, KUALA_LUMPUR.longitude);
+  const windByDate = new Map(winds.map((wind) => [wind.date, wind]));
+  const alignment = rows.reduce((sum, fire) => {
+    const wind = windByDate.get(malaysiaFireDate(fire));
+    if (!wind) throw new Error(`No matching wind data for FIRMS detection on ${fire.acq_date}.`);
+    return sum + alignmentScore(wind.wind_direction_degrees, route);
+  }, 0);
+  return { region, count: rows.length, alignment: rows.length === 0 ? 0 : alignment / rows.length };
+}
+
+async function fetchCurrentFires(mapKey: string, winds: DailyWind[]): Promise<CurrentReport["fires"]> {
   return Promise.all(FIRE_REGIONS.map(async (region) => {
     const url = `${FIRMS_URL}/${mapKey}/${CURRENT_FIRMS_SENSOR}/${region.bbox}/2`;
     const response = await fetchWithRetry(url);
     if (!response.ok) throw new Error(`NASA FIRMS request failed (${response.status}) for ${region.name}. Check FIRMS_MAP_KEY.`);
-    const rows = parseCsv<Record<string, string>>(await response.text());
-    const source = SOURCE_CENTROIDS[region.name];
-    const route = initialBearing(source.latitude, source.longitude, KUALA_LUMPUR.latitude, KUALA_LUMPUR.longitude);
-    return { region: region.name, count: rows.length, alignment: alignmentScore(windDirection, route) };
+    const rows = parseCsv<Omit<FireHotspot, "region">>(await response.text())
+      .map((row) => ({ ...row, region: region.name }));
+    return summariseCurrentFires(rows, region.name, winds);
   }));
 }
 
@@ -293,9 +339,9 @@ async function main(): Promise<void> {
   if (!mapKey || !openAqKey) throw new Error("Add FIRMS_MAP_KEY and OPENAQ_API_KEY to .env first.");
 
   const [pm25, wind] = await Promise.all([fetchCurrentPm25(openAqKey), fetchCurrentWind()]);
-  const fires = await fetchCurrentFires(mapKey, wind.direction);
+  const fires = await fetchCurrentFires(mapKey, wind.daily);
   const highSignalThreshold = await loadHighSignalThreshold();
-  console.log(formatCurrentReport({ checkedAt: new Date().toISOString(), pm25, wind, fires, highSignalThreshold }));
+  console.log(formatCurrentReport({ checkedAt: new Date().toISOString(), pm25, wind: wind.current, fires, highSignalThreshold }));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

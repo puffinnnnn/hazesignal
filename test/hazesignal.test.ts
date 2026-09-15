@@ -8,12 +8,21 @@ import {
   dailyWind,
   initialBearing,
   isUsablePm25,
+  KUALA_LUMPUR,
   linearRegression,
   meanAbsoluteError,
+  SOURCE_CENTROIDS,
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
-import { formatCurrentReport, isPm25MassUnit, median, percentile, pm25Category } from "../src/current.js";
+import {
+  formatCurrentReport,
+  isPm25MassUnit,
+  median,
+  percentile,
+  pm25Category,
+  summariseCurrentFires,
+} from "../src/current.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -166,7 +175,7 @@ test("fetchFirms includes the previous UTC day and keeps only Malaysia study dat
 });
 
 test("current report explains readings without claiming a forecast", () => {
-  const report = formatCurrentReport({
+  const input: Parameters<typeof formatCurrentReport>[0] = {
     checkedAt: "2026-09-14T14:00:00.000Z",
     pm25: {
       average24h: 80,
@@ -181,7 +190,8 @@ test("current report explains readings without claiming a forecast", () => {
       { region: "kalimantan", count: 40, alignment: 0 },
     ],
     highSignalThreshold: 100,
-  });
+  };
+  const report = formatCurrentReport(input);
 
   assert.match(report, /HAZESIGNAL — KUALA LUMPUR/);
   assert.match(report, /AIR TODAY: UNHEALTHY/);
@@ -192,6 +202,28 @@ test("current report explains readings without claiming a forecast", () => {
   assert.match(report, /5 nearby monitors.*74–91 µg\/m³/i);
   assert.match(report, /signal: 108 \(historical high threshold 100; 1\.1× this threshold\)/i);
   assert.doesNotMatch(report, /incomplete combustion/i);
+  assert.throws(() => formatCurrentReport({ ...input, highSignalThreshold: 0 }), /must be positive/i);
+});
+
+test("current fire signal uses each detection day's wind", () => {
+  const route = initialBearing(
+    SOURCE_CENTROIDS.sumatra.latitude,
+    SOURCE_CENTROIDS.sumatra.longitude,
+    KUALA_LUMPUR.latitude,
+    KUALA_LUMPUR.longitude,
+  );
+  const result = summariseCurrentFires(
+    [
+      { acq_date: "2026-09-14", frp: 10, region: "sumatra" },
+      { acq_date: "2026-09-15", frp: 10, region: "sumatra" },
+    ],
+    "sumatra",
+    [
+      { date: "2026-09-14", wind_speed_kmh: 10, wind_direction_degrees: (route + 180) % 360, observations: 24 },
+      { date: "2026-09-15", wind_speed_kmh: 10, wind_direction_degrees: route, observations: 12 },
+    ],
+  );
+  assert.ok(Math.abs(result.alignment - 0.5) < 0.000001);
 });
 
 test("PM2.5 category follows Malaysia DOE concentration bands", () => {
