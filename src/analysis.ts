@@ -22,6 +22,7 @@ export interface FireHotspot {
 export interface Pm25Reading {
   date: string;
   pm25_ug_m3: number;
+  coverage_percent?: number;
 }
 
 export interface CombinedDay extends DailyWind {
@@ -29,8 +30,11 @@ export interface CombinedDay extends DailyWind {
   wind_alignment: number;
   aligned_hotspot_count: number;
   pm25_ug_m3: number | null;
+  pm25_coverage_percent: number | null;
   pm25_next_day: number | null;
+  pm25_next_day_coverage_percent: number | null;
   pm25_in_two_days: number | null;
+  pm25_in_two_days_coverage_percent: number | null;
 }
 
 export interface RegressionResult {
@@ -46,6 +50,10 @@ export const SOURCE_CENTROIDS = {
   sumatra: { latitude: 0, longitude: 101 },
   kalimantan: { latitude: 0.5, longitude: 113.5 },
 } as const;
+
+export function isUsablePm25(value: number | null, coveragePercent?: number | null): boolean {
+  return value != null && coveragePercent != null && coveragePercent >= 75;
+}
 
 const radians = (degrees: number): number => degrees * Math.PI / 180;
 const degrees = (angle: number): number => angle * 180 / Math.PI;
@@ -97,7 +105,7 @@ export function combineDailyData(
   wind: DailyWind[],
   pm25: Pm25Reading[],
 ): CombinedDay[] {
-  const pm25ByDate = new Map(pm25.map((row) => [row.date, row.pm25_ug_m3]));
+  const pm25ByDate = new Map(pm25.map((row) => [row.date, row]));
   const firesByDate = new Map<string, FireHotspot[]>();
   for (const fire of hotspots) {
     const date = malaysiaFireDate(fire);
@@ -106,6 +114,9 @@ export function combineDailyData(
 
   return wind.map((day) => {
     const fires = firesByDate.get(day.date) ?? [];
+    const currentPm25 = pm25ByDate.get(day.date);
+    const nextPm25 = pm25ByDate.get(addCalendarDays(day.date, 1));
+    const twoDayPm25 = pm25ByDate.get(addCalendarDays(day.date, 2));
     const alignedHotspots = fires.reduce((sum, fire) => {
       const source = SOURCE_CENTROIDS[fire.region];
       if (!source) throw new Error(`Unknown fire region: ${fire.region}`);
@@ -117,9 +128,12 @@ export function combineDailyData(
       hotspot_count: fires.length,
       wind_alignment: fires.length === 0 ? 0 : alignedHotspots / fires.length,
       aligned_hotspot_count: alignedHotspots,
-      pm25_ug_m3: pm25ByDate.get(day.date) ?? null,
-      pm25_next_day: pm25ByDate.get(addCalendarDays(day.date, 1)) ?? null,
-      pm25_in_two_days: pm25ByDate.get(addCalendarDays(day.date, 2)) ?? null,
+      pm25_ug_m3: currentPm25?.pm25_ug_m3 ?? null,
+      pm25_coverage_percent: currentPm25?.coverage_percent ?? null,
+      pm25_next_day: nextPm25?.pm25_ug_m3 ?? null,
+      pm25_next_day_coverage_percent: nextPm25?.coverage_percent ?? null,
+      pm25_in_two_days: twoDayPm25?.pm25_ug_m3 ?? null,
+      pm25_in_two_days_coverage_percent: twoDayPm25?.coverage_percent ?? null,
     };
   });
 }
@@ -161,6 +175,11 @@ export function linearRegression(points: Array<{ x: number; y: number }>): Regre
     rSquared: r ** 2,
     observations: points.length,
   };
+}
+
+export function meanAbsoluteError(points: Array<{ predicted: number; actual: number }>): number {
+  if (points.length === 0) throw new Error("Mean absolute error needs at least one prediction.");
+  return points.reduce((sum, point) => sum + Math.abs(point.predicted - point.actual), 0) / points.length;
 }
 
 export function scatterSvg(

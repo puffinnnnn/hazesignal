@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   combineDailyData,
   dailyWind,
+  isUsablePm25,
   linearRegression,
   scatterSvg,
   type FireHotspot,
@@ -21,6 +22,7 @@ interface RawWind {
 interface RawPm25 {
   date: string;
   pm25_ug_m3: string;
+  coverage_percent?: string;
 }
 
 async function requireFile(path: string, command: string): Promise<void> {
@@ -50,25 +52,32 @@ async function main(): Promise<void> {
   const pm25: Pm25Reading[] = rawPm25.map((row) => ({
     date: row.date,
     pm25_ug_m3: Number(row.pm25_ug_m3),
+    coverage_percent: row.coverage_percent ? Number(row.coverage_percent) : undefined,
   }));
   const combined = combineDailyData(hotspots, dailyWind(wind), pm25);
-  const points = combined.flatMap((row) => row.pm25_next_day == null ? [] : [{
+  const nextDayRows = combined.filter((row) =>
+    isUsablePm25(row.pm25_next_day, row.pm25_next_day_coverage_percent)
+  );
+  const twoDayRows = combined.filter((row) =>
+    isUsablePm25(row.pm25_in_two_days, row.pm25_in_two_days_coverage_percent)
+  );
+  const points = nextDayRows.map((row) => ({
     x: row.aligned_hotspot_count,
-    y: row.pm25_next_day,
-  }]);
+    y: row.pm25_next_day!,
+  }));
   const regression = linearRegression(points);
-  const rawNextDay = linearRegression(combined.flatMap((row) => row.pm25_next_day == null ? [] : [{
+  const rawNextDay = linearRegression(nextDayRows.map((row) => ({
     x: row.hotspot_count,
-    y: row.pm25_next_day,
-  }]));
-  const alignedTwoDay = linearRegression(combined.flatMap((row) => row.pm25_in_two_days == null ? [] : [{
+    y: row.pm25_next_day!,
+  })));
+  const alignedTwoDay = linearRegression(twoDayRows.map((row) => ({
     x: row.aligned_hotspot_count,
-    y: row.pm25_in_two_days,
-  }]));
-  const rawTwoDay = linearRegression(combined.flatMap((row) => row.pm25_in_two_days == null ? [] : [{
+    y: row.pm25_in_two_days!,
+  })));
+  const rawTwoDay = linearRegression(twoDayRows.map((row) => ({
     x: row.hotspot_count,
-    y: row.pm25_in_two_days,
-  }]));
+    y: row.pm25_in_two_days!,
+  })));
 
   await writeCsv(resolve("data/combined.csv"), combined as unknown as CsvRow[]);
   await writeFile(resolve("data/regression.svg"), scatterSvg(points, regression), "utf8");

@@ -46,11 +46,21 @@ The command automatically finds up to five nearby PM2.5 sensors updated within t
 
 Peat and plant material can undergo incomplete combustion, producing soot, ash, and condensed organic compounds. These fine solid particles and liquid aerosols can remain suspended in the atmosphere. Wind then transports the particle-containing air mass. This materials-science link explains why the project measures fires first, transport second, and PM2.5 at the destination last.
 
-## Current pilot result
+## Historical result
 
-The complete reproducible example uses September 2023, when all three sources overlap. Across 28 next-day observations, hotspot count alone has `r = 0.645`, while wind-aligned hotspot count has `r = 0.757`. Excluding the target day with only 29% PM2.5 coverage reduces the aligned result to `r = 0.696` across 27 observations. These are in-sample correlations from one month, not validated forecast accuracy.
+The complete reproducible example uses September 2023, when all three sources overlap. After excluding a target day with only 29% PM2.5 coverage, hotspot count alone has `r = 0.552`, while wind-aligned hotspot count has `r = 0.696` across 27 next-day observations. These are in-sample correlations from one month, not validated forecast accuracy.
 
 You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.757` does **not** mean the project is 75.7% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
+
+A stronger follow-up trains the models on September–October 2023 and tests them on 54 unseen, sufficiently complete target days in November–December. Average next-day errors were:
+
+| Method | Average error |
+| --- | ---: |
+| Assume tomorrow resembles today | 2.85 µg/m³ |
+| Fire hotspots only | 2.80 µg/m³ |
+| Fire hotspots plus wind alignment | 5.91 µg/m³ |
+
+Hotspot count alone had just 0.06 µg/m³ less average error than the baseline, effectively a tie in this short test. Adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
 
 ## What is included
 
@@ -65,7 +75,8 @@ hazesignal/
 │   ├── fetch_firms.ts
 │   ├── fetch_pm25.ts
 │   ├── fetch_wind.ts
-│   └── run_analysis.ts
+│   ├── run_analysis.ts
+│   └── validate_model.ts
 ├── test/hazesignal.test.ts
 ├── data/
 ├── .env.example
@@ -95,11 +106,11 @@ The current OpenAQ Kuala Lumpur record starts on 3 November 2022, so an OpenAQ k
 For the intended 2019 experiment, request daily Cheras PM2.5 data from the DOE portal linked above. Save the approved data as `data/pm25_2019-09-01_2019-09-30.csv`:
 
 ```csv
-date,pm25_ug_m3
-2019-09-01,VALUE_FROM_SOURCE
+date,pm25_ug_m3,coverage_percent
+2019-09-01,VALUE_FROM_SOURCE,VALUE_FROM_SOURCE
 ```
 
-The second field above only demonstrates the file shape. Replace it with the actual sourced value and do not label illustrative values as observations. The repository intentionally does not invent a daily PM2.5 sample.
+The fields above only demonstrate the file shape. Replace them with the actual sourced measurement and percentage of the day covered. Exclude a date if its coverage cannot be verified. The repository intentionally does not invent a daily PM2.5 sample.
 
 For a later study period covered by OpenAQ, use `src/fetch_pm25.ts` with a PM2.5 sensor ID from [OpenAQ Explorer](https://explore.openaq.org/).
 
@@ -166,6 +177,16 @@ npm run notebook
 
 This repeats the same calculations and refreshes `data/regression.svg`. Use `npm run analyze` when you also want to rewrite `data/combined.csv`. You can read `notebooks/01_analysis.ipynb` in VS Code without selecting a kernel or pressing **Run All**. Python and a system-wide Deno installation are not required.
 
+## Test the model on later dates
+
+The repository includes a compact four-month daily table. Run:
+
+```powershell
+npm run validate
+```
+
+This fits the two fire models on September–October 2023, evaluates them on November–December, and compares their average error with the simple assumption that tomorrow's PM2.5 will resemble today's. Lower error is better. The testing dates are kept out of model fitting so this is a more demanding check than measuring correlation on the same dates used to draw the line.
+
 ## Wind alignment in plain language
 
 Weather reports describe the direction wind comes **from**. Smoke travels in the opposite direction:
@@ -184,9 +205,9 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 
 ## Limitations
 
-- One month is too small to establish a reliable warning model.
-- The September 2023 OpenAQ series is missing 27 September, and 28 September has only 29% daily coverage.
-- The reported correlations are fitted and measured on the same 28 observations, so they do not show performance on unseen dates.
+- Four months from one Kuala Lumpur sensor are still too little to establish a reliable warning model.
+- Days with unknown or below-75% PM2.5 coverage are excluded from regression and validation. Four daily values in the four-month sample fall below that threshold.
+- The original September correlations are fitted and measured on the same observations. In the later held-out test, the wind-aligned model did not beat the persistence baseline.
 - A regional centre and Kuala Lumpur's local 10 m wind simplify a long, changing transport path.
 - The rectangular fire boxes can include nearby territories and islands; exact administrative polygons would isolate Indonesian Sumatra and Kalimantan more precisely.
 - Hotspot count treats a small fire and an intense peat fire equally. Fire radiative power would add useful information.

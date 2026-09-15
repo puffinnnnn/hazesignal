@@ -10,6 +10,7 @@
     "fetch:pm25": "tsx src/fetch_pm25.ts",
     "current": "tsx src/current.ts",
     "analyze": "tsx src/run_analysis.ts",
+    "validate": "tsx src/validate_model.ts",
     "notebook": "node scripts/run_notebook.mjs",
     "test": "node --import tsx --test",
     "typecheck": "tsc --noEmit"
