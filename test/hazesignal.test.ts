@@ -13,7 +13,7 @@ import {
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
-import { formatCurrentReport, isPm25MassUnit, median, pm25Category } from "../src/current.js";
+import { formatCurrentReport, isPm25MassUnit, median, percentile, pm25Category } from "../src/current.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -180,6 +180,7 @@ test("current report explains readings without claiming a forecast", () => {
       { region: "sumatra", count: 120, alignment: 0.9 },
       { region: "kalimantan", count: 40, alignment: 0 },
     ],
+    highSignalThreshold: 100,
   });
 
   assert.match(report, /HAZESIGNAL — KUALA LUMPUR/);
@@ -189,6 +190,7 @@ test("current report explains readings without claiming a forecast", () => {
   assert.match(report, /NEXT 1–2 DAYS: WARNING CLUE PRESENT/);
   assert.match(report, /ACTION/);
   assert.match(report, /5 nearby monitors.*74–91 µg\/m³/i);
+  assert.match(report, /signal: 108 \(historical high threshold 100; 1\.1× this threshold\)/i);
   assert.doesNotMatch(report, /incomplete combustion/i);
 });
 
@@ -202,6 +204,10 @@ test("PM2.5 category follows Malaysia DOE concentration bands", () => {
 
 test("median resists one extreme monitor reading", () => {
   assert.equal(median([79, 80, 81, 82, 500]), 81);
+});
+
+test("percentile finds the historical high-signal threshold", () => {
+  assert.equal(percentile([1, 2, 3, 4, 100], 0.8), 4);
 });
 
 test("PM2.5 categories only accept micrograms per cubic metre", () => {

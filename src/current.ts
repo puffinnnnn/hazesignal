@@ -1,9 +1,10 @@
 import "dotenv/config";
 
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { alignmentScore, initialBearing, KUALA_LUMPUR, SOURCE_CENTROIDS } from "./analysis.js";
-import { parseCsv } from "./csv.js";
+import { parseCsv, readCsv } from "./csv.js";
 import { FIRE_REGIONS, FIRMS_URL, fetchWithRetry } from "./fetch_firms.js";
 
 const OPENAQ_URL = "https://api.openaq.org/v3";
@@ -22,6 +23,7 @@ interface CurrentReport {
   };
   wind: { speed: number; direction: number };
   fires: Array<{ region: RegionName; count: number; alignment: number }>;
+  highSignalThreshold: number;
 }
 
 interface OpenAqLocation {
@@ -97,6 +99,14 @@ export function median(values: number[]): number {
     : (sorted[middle - 1]! + sorted[middle]!) / 2;
 }
 
+export function percentile(values: number[], proportion: number): number {
+  if (values.length === 0 || proportion < 0 || proportion > 1) {
+    throw new Error("Percentile needs values and a proportion from 0 to 1.");
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.ceil(proportion * sorted.length) - 1] ?? sorted[0]!;
+}
+
 export function isPm25MassUnit(unit: string | undefined): boolean {
   const normalised = unit?.trim().toLowerCase().replace("μ", "µ").replace("³", "3");
   return normalised === "µg/m3" || normalised === "ug/m3";
@@ -112,7 +122,8 @@ function localTime(iso: string): string {
 
 export function formatCurrentReport(report: CurrentReport): string {
   const strongest = report.fires.reduce((best, fire) => fire.alignment > best.alignment ? fire : best);
-  const hasClue = strongest.count > 0 && strongest.alignment >= 0.5;
+  const signal = report.fires.reduce((sum, fire) => sum + fire.count * fire.alignment, 0);
+  const hasClue = signal >= report.highSignalThreshold;
   const category = report.pm25.average24h == null ? null : pm25Category(report.pm25.average24h);
   const today = category?.name ?? "NOT ENOUGH DATA";
   const tomorrow = hasClue ? "WARNING CLUE PRESENT" : "NO CLEAR WARNING CLUE";
@@ -156,8 +167,19 @@ EVIDENCE
 PM2.5 monitors: ${report.pm25.monitorCount} nearby monitors (24-hour range ${report.pm25.rangeLow ?? "?"}–${report.pm25.rangeHigh ?? "?"} ${report.pm25.unit})
 Fire detections: Sumatra ${sumatra} | Kalimantan ${kalimantan}
 Strongest wind match: ${strongestName} ${Math.round(strongest.alignment * 100)}%
+Two-day fire-and-wind signal: ${Math.round(signal)} (historical high threshold ${Math.round(report.highSignalThreshold)}; ${(signal / report.highSignalThreshold).toFixed(1)}× this threshold)
 
 Hotspots are satellite detections, not separate fires. See README.md for definitions and scientific details.`;
+}
+
+async function loadHighSignalThreshold(): Promise<number> {
+  const rows = await readCsv<{ aligned_hotspot_count: string }>(resolve("data/validation_2023.csv"));
+  const daily = rows.map((row) => Number(row.aligned_hotspot_count));
+  if (daily.some((value) => !Number.isFinite(value)) || daily.length < 2) {
+    throw new Error("Historical validation data cannot calibrate the current warning clue.");
+  }
+  const twoDaySignals = daily.slice(1).map((value, index) => value + daily[index]!);
+  return percentile(twoDaySignals, 0.9);
 }
 
 async function fetch24HourAverage(
@@ -272,7 +294,8 @@ async function main(): Promise<void> {
 
   const [pm25, wind] = await Promise.all([fetchCurrentPm25(openAqKey), fetchCurrentWind()]);
   const fires = await fetchCurrentFires(mapKey, wind.direction);
-  console.log(formatCurrentReport({ checkedAt: new Date().toISOString(), pm25, wind, fires }));
+  const highSignalThreshold = await loadHighSignalThreshold();
+  console.log(formatCurrentReport({ checkedAt: new Date().toISOString(), pm25, wind, fires, highSignalThreshold }));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
