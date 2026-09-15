@@ -41,6 +41,7 @@ async function main(): Promise<void> {
       numberOrNull(row.pm25_next_day),
     ];
     if (values.some((value) => value == null)) return [];
+    if (todayCoverage == null || tomorrowCoverage == null) return [];
     if (!isUsablePm25(values[2]!, todayCoverage) || !isUsablePm25(values[3]!, tomorrowCoverage)) return [];
     return [{
       date: row.date,
