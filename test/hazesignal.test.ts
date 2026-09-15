@@ -104,10 +104,10 @@ test("meanAbsoluteError reports typical prediction distance", () => {
   ]), 1.5);
 });
 
-test("PM2.5 readings with less than 75% coverage are excluded", () => {
+test("PM2.5 readings need known coverage of at least 75%", () => {
   assert.equal(isUsablePm25(40.6, 29), false);
   assert.equal(isUsablePm25(20, 75), true);
-  assert.equal(isUsablePm25(20), true);
+  assert.equal(isUsablePm25(20), false);
 });
 
 test("fetchWithRetry retries temporary network failures", async () => {

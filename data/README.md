@@ -26,8 +26,8 @@ A 2019 OpenAQ sample is not included because its Kuala Lumpur station does not c
 OpenAQ's current Kuala Lumpur location begins reporting in November 2022, so it cannot supply the September 2019 validation series. For the study period, request daily PM2.5 observations for the Cheras station from Malaysia's Department of Environment data portal and save the approved export as `pm25_2019-09-01_2019-09-30.csv` with these columns:
 
 ```csv
-date,pm25_ug_m3
-2019-09-01,VALUE_FROM_SOURCE
+date,pm25_ug_m3,coverage_percent
+2019-09-01,VALUE_FROM_SOURCE,VALUE_FROM_SOURCE
 ```
 
-`VALUE_FROM_SOURCE` is deliberately a placeholder here. Do not run the analysis until it has been replaced by a sourced measurement.
+`VALUE_FROM_SOURCE` is deliberately a placeholder here. Replace both values with the sourced daily measurement and verified coverage percentage before running the analysis.

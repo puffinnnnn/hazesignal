@@ -52,7 +52,7 @@ export const SOURCE_CENTROIDS = {
 } as const;
 
 export function isUsablePm25(value: number | null, coveragePercent?: number | null): boolean {
-  return value != null && (coveragePercent == null || coveragePercent >= 75);
+  return value != null && coveragePercent != null && coveragePercent >= 75;
 }
 
 const radians = (degrees: number): number => degrees * Math.PI / 180;

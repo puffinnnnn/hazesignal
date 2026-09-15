@@ -48,7 +48,7 @@ Peat and plant material can undergo incomplete combustion, producing soot, ash, 
 
 ## Historical result
 
-The complete reproducible example uses September 2023, when all three sources overlap. Across 28 next-day observations, hotspot count alone has `r = 0.645`, while wind-aligned hotspot count has `r = 0.757`. Excluding the target day with only 29% PM2.5 coverage reduces the aligned result to `r = 0.696` across 27 observations. These are in-sample correlations from one month, not validated forecast accuracy.
+The complete reproducible example uses September 2023, when all three sources overlap. After excluding a target day with only 29% PM2.5 coverage, hotspot count alone has `r = 0.552`, while wind-aligned hotspot count has `r = 0.696` across 27 next-day observations. These are in-sample correlations from one month, not validated forecast accuracy.
 
 You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.757` does **not** mean the project is 75.7% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
 
@@ -106,11 +106,11 @@ The current OpenAQ Kuala Lumpur record starts on 3 November 2022, so an OpenAQ k
 For the intended 2019 experiment, request daily Cheras PM2.5 data from the DOE portal linked above. Save the approved data as `data/pm25_2019-09-01_2019-09-30.csv`:
 
 ```csv
-date,pm25_ug_m3
-2019-09-01,VALUE_FROM_SOURCE
+date,pm25_ug_m3,coverage_percent
+2019-09-01,VALUE_FROM_SOURCE,VALUE_FROM_SOURCE
 ```
 
-The second field above only demonstrates the file shape. Replace it with the actual sourced value and do not label illustrative values as observations. The repository intentionally does not invent a daily PM2.5 sample.
+The fields above only demonstrate the file shape. Replace them with the actual sourced measurement and percentage of the day covered. Exclude a date if its coverage cannot be verified. The repository intentionally does not invent a daily PM2.5 sample.
 
 For a later study period covered by OpenAQ, use `src/fetch_pm25.ts` with a PM2.5 sensor ID from [OpenAQ Explorer](https://explore.openaq.org/).
 
@@ -206,7 +206,7 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 ## Limitations
 
 - Four months from one Kuala Lumpur sensor are still too little to establish a reliable warning model.
-- Days below 75% OpenAQ coverage are excluded from regression and validation. Four daily values in the four-month sample fall below that threshold.
+- Days with unknown or below-75% PM2.5 coverage are excluded from regression and validation. Four daily values in the four-month sample fall below that threshold.
 - The original September correlations are fitted and measured on the same observations. In the later held-out test, the wind-aligned model did not beat the persistence baseline.
 - A regional centre and Kuala Lumpur's local 10 m wind simplify a long, changing transport path.
 - The rectangular fire boxes can include nearby territories and islands; exact administrative polygons would isolate Indonesian Sumatra and Kalimantan more precisely.
