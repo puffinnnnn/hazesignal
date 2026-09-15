@@ -16,6 +16,7 @@ export interface DailyWind extends HourlyWind {
 export interface FireHotspot {
   acq_date: string;
   acq_time?: string;
+  frp?: number | string;
   region: keyof typeof SOURCE_CENTROIDS;
 }
 
@@ -27,8 +28,10 @@ export interface Pm25Reading {
 
 export interface CombinedDay extends DailyWind {
   hotspot_count: number;
+  fire_radiative_power_mw: number;
   wind_alignment: number;
   aligned_hotspot_count: number;
+  aligned_fire_radiative_power_mw: number;
   pm25_ug_m3: number | null;
   pm25_coverage_percent: number | null;
   pm25_next_day: number | null;
@@ -117,17 +120,27 @@ export function combineDailyData(
     const currentPm25 = pm25ByDate.get(day.date);
     const nextPm25 = pm25ByDate.get(addCalendarDays(day.date, 1));
     const twoDayPm25 = pm25ByDate.get(addCalendarDays(day.date, 2));
-    const alignedHotspots = fires.reduce((sum, fire) => {
+    let alignedHotspots = 0;
+    let firePower = 0;
+    let alignedFirePower = 0;
+    for (const fire of fires) {
       const source = SOURCE_CENTROIDS[fire.region];
       if (!source) throw new Error(`Unknown fire region: ${fire.region}`);
       const route = initialBearing(source.latitude, source.longitude, KUALA_LUMPUR.latitude, KUALA_LUMPUR.longitude);
-      return sum + alignmentScore(day.wind_direction_degrees, route);
-    }, 0);
+      const alignment = alignmentScore(day.wind_direction_degrees, route);
+      const power = Number(fire.frp);
+      const usablePower = Number.isFinite(power) && power > 0 ? power : 0;
+      alignedHotspots += alignment;
+      firePower += usablePower;
+      alignedFirePower += usablePower * alignment;
+    }
     return {
       ...day,
       hotspot_count: fires.length,
+      fire_radiative_power_mw: firePower,
       wind_alignment: fires.length === 0 ? 0 : alignedHotspots / fires.length,
       aligned_hotspot_count: alignedHotspots,
+      aligned_fire_radiative_power_mw: alignedFirePower,
       pm25_ug_m3: currentPm25?.pm25_ug_m3 ?? null,
       pm25_coverage_percent: currentPm25?.coverage_percent ?? null,
       pm25_next_day: nextPm25?.pm25_ug_m3 ?? null,

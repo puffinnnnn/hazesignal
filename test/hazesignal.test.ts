@@ -51,8 +51,8 @@ test("dailyWind averages directions across zero degrees", () => {
 test("combineDailyData joins PM2.5 by calendar-day leads", () => {
   const rows = combineDailyData(
     [
-      { acq_date: "2019-09-01", region: "sumatra" },
-      { acq_date: "2019-09-01", region: "sumatra" },
+      { acq_date: "2019-09-01", frp: "10", region: "sumatra" },
+      { acq_date: "2019-09-01", frp: 20, region: "sumatra" },
     ],
     [{
       date: "2019-09-01",
@@ -67,6 +67,8 @@ test("combineDailyData joins PM2.5 by calendar-day leads", () => {
     ],
   );
   assert.equal(rows[0]?.hotspot_count, 2);
+  assert.equal(rows[0]?.fire_radiative_power_mw, 30);
+  assert.ok((rows[0]?.aligned_fire_radiative_power_mw ?? 0) <= 30);
   assert.equal(rows[0]?.pm25_next_day, 30);
   assert.equal(rows[0]?.pm25_in_two_days, 40);
 });
