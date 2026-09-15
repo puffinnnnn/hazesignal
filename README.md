@@ -42,6 +42,7 @@ The command automatically finds up to five nearby PM2.5 sensors updated within t
 - **PM2.5:** airborne solid particles and liquid droplets no wider than about 2.5 micrometres. These particles are small enough to travel deep into the lungs.
 - **µg/m³:** micrograms of particles in one cubic metre of air. A microgram is one-millionth of a gram; a cubic metre is a cube measuring one metre on each side.
 - **Hotspot:** one place where a satellite detected unusual heat. It is not necessarily a separate fire, and it is not a direct measurement of haze.
+- **Fire radiative power (FRP):** the satellite's estimate of how quickly a detected fire is releasing radiant heat, measured in megawatts. HazeSignal tests it as a simple clue for fire intensity.
 - **Wind match:** how closely the current wind points from a fire region toward Kuala Lumpur. `100%` is directly aligned; `0%` is sideways or away.
 
 Peat and plant material can undergo incomplete combustion, producing soot, ash, and condensed organic compounds. These fine solid particles and liquid aerosols can remain suspended in the atmosphere. Wind then transports the particle-containing air mass. This materials-science link explains why the project measures fires first, transport second, and PM2.5 at the destination last.
@@ -59,8 +60,10 @@ A stronger follow-up trains the models on September–October 2023 and tests the
 | Assume tomorrow resembles today | 2.85 µg/m³ |
 | Fire hotspots only | 2.80 µg/m³ |
 | Fire hotspots plus wind alignment | 5.91 µg/m³ |
+| Fire intensity only | 3.12 µg/m³ |
+| Fire intensity plus wind alignment | 6.15 µg/m³ |
 
-Hotspot count alone had just 0.06 µg/m³ less average error than the baseline, effectively a tie in this short test. Adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
+Hotspot count alone had just 0.06 µg/m³ less average error than the baseline, effectively a tie in this short test. Weighting detections by NASA fire radiative power did not improve the result, and adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
 
 ## What is included
 
@@ -210,7 +213,7 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 - The original September correlations are fitted and measured on the same observations. In the later held-out test, the wind-aligned model did not beat the persistence baseline.
 - A regional centre and Kuala Lumpur's local 10 m wind simplify a long, changing transport path.
 - The rectangular fire boxes can include nearby territories and islands; exact administrative polygons would isolate Indonesian Sumatra and Kalimantan more precisely.
-- Hotspot count treats a small fire and an intense peat fire equally. Fire radiative power would add useful information.
+- Fire radiative power is a heat-release clue, not a direct smoke-emission measurement. Weighting hotspots by it did not improve this short validation.
 - Clouds, missed satellite passes, and monitor gaps can remove observations.
 - Rainfall, humidity, boundary-layer height, vertical wind, fire duration, peat depth, and local emissions are omitted.
 - Kalimantan smoke more directly affects East Malaysia; combining it with a Kuala Lumpur outcome may weaken the relationship.
