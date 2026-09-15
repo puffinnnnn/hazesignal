@@ -17,6 +17,7 @@ type FirmsApiRow = Record<string, string> & {
   latitude: string;
   longitude: string;
   acq_date: string;
+  frp: string;
 };
 type FirmsRow = FirmsApiRow & { region: typeof FIRE_REGIONS[number]["name"] };
 

@@ -89,11 +89,15 @@ async function main(): Promise<void> {
     }))),
   };
   const show = (value: number) => value.toFixed(2);
-  const conclusion = errors.aligned < errors.persistence
-    ? "The fire-and-wind model beat the simple baseline on these unseen dates. It still needs more seasons before use as a warning system."
-    : errors.hotspots < errors.persistence
-    ? `Hotspots alone had ${show(errors.persistence - errors.hotspots)} µg/m³ less error than the baseline, but fire intensity and wind performed worse. This is mixed evidence and does not yet support the fire-and-wind warning hypothesis.`
-    : "Neither fire model beat the simple baseline on these unseen dates. The method is not yet a reliable early-warning predictor.";
+  const best = [
+    { name: "Hotspots alone", error: errors.hotspots },
+    { name: "Hotspots plus wind", error: errors.aligned },
+    { name: "Fire intensity alone", error: errors.firePower },
+    { name: "Fire intensity plus wind", error: errors.alignedFirePower },
+  ].reduce((lowest, model) => model.error < lowest.error ? model : lowest);
+  const conclusion = best.error < errors.persistence
+    ? `${best.name} had ${show(errors.persistence - best.error)} µg/m³ less error than the baseline. This short test is not enough to establish a reliable early-warning predictor.`
+    : "None of the fire models beat the simple baseline on these unseen dates. The method is not yet a reliable early-warning predictor.";
 
   console.log(`HAZESIGNAL — HISTORICAL VALIDATION
 

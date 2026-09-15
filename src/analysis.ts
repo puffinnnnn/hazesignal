@@ -16,7 +16,7 @@ export interface DailyWind extends HourlyWind {
 export interface FireHotspot {
   acq_date: string;
   acq_time?: string;
-  frp?: number | string;
+  frp: number | string;
   region: keyof typeof SOURCE_CENTROIDS;
 }
 
@@ -129,10 +129,12 @@ export function combineDailyData(
       const route = initialBearing(source.latitude, source.longitude, KUALA_LUMPUR.latitude, KUALA_LUMPUR.longitude);
       const alignment = alignmentScore(day.wind_direction_degrees, route);
       const power = Number(fire.frp);
-      const usablePower = Number.isFinite(power) && power > 0 ? power : 0;
+      if (!Number.isFinite(power) || power < 0) {
+        throw new Error(`Missing or invalid FIRMS fire radiative power on ${fire.acq_date}.`);
+      }
       alignedHotspots += alignment;
-      firePower += usablePower;
-      alignedFirePower += usablePower * alignment;
+      firePower += power;
+      alignedFirePower += power * alignment;
     }
     return {
       ...day,
