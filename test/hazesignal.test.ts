@@ -11,7 +11,7 @@ import {
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
-import { formatCurrentReport, median, pm25Category } from "../src/current.js";
+import { formatCurrentReport, isPm25MassUnit, median, pm25Category } from "../src/current.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -177,4 +177,10 @@ test("PM2.5 category follows Malaysia DOE concentration bands", () => {
 
 test("median resists one extreme monitor reading", () => {
   assert.equal(median([79, 80, 81, 82, 500]), 81);
+});
+
+test("PM2.5 categories only accept micrograms per cubic metre", () => {
+  assert.equal(isPm25MassUnit("µg/m³"), true);
+  assert.equal(isPm25MassUnit("ug/m3"), true);
+  assert.equal(isPm25MassUnit("mg/m³"), false);
 });

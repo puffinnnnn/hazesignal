@@ -97,6 +97,11 @@ export function median(values: number[]): number {
     : (sorted[middle - 1]! + sorted[middle]!) / 2;
 }
 
+export function isPm25MassUnit(unit: string | undefined): boolean {
+  const normalised = unit?.trim().toLowerCase().replace("μ", "µ").replace("³", "3");
+  return normalised === "µg/m3" || normalised === "ug/m3";
+}
+
 function localTime(iso: string): string {
   return new Intl.DateTimeFormat("en-MY", {
     timeZone: "Asia/Kuala_Lumpur",
@@ -210,12 +215,13 @@ async function fetchCurrentPm25(apiKey: string): Promise<CurrentReport["pm25"]> 
     const sensor = (await sensorResponse.json() as { results?: OpenAqSensor[] }).results?.[0];
     const value = sensor?.latest?.value;
     const measuredAt = sensor?.latest?.datetime?.utc;
+    const sensorUnit = sensor?.parameter?.units;
     const ageHours = measuredAt ? (Date.now() - Date.parse(measuredAt)) / 3_600_000 : Infinity;
-    if (typeof value === "number" && measuredAt && ageHours >= -1 && ageHours <= 48) {
+    if (typeof value === "number" && measuredAt && isPm25MassUnit(sensorUnit) && ageHours >= -1 && ageHours <= 48) {
       const recent = await fetch24HourAverage(candidate.id, apiKey, measuredAt);
       if (recent.average24h != null) {
         readings.push(recent.average24h);
-        unit = sensor?.parameter?.units ?? unit;
+        unit = "µg/m³";
         if (readings.length === 5) break;
       }
     }
