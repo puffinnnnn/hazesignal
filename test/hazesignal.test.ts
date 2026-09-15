@@ -8,6 +8,7 @@ import {
   dailyWind,
   initialBearing,
   linearRegression,
+  meanAbsoluteError,
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
@@ -93,6 +94,13 @@ test("linearRegression fits a perfect straight line", () => {
   assert.equal(result.intercept, 1);
   assert.ok(Math.abs(result.r - 1) < 1e-12);
   assert.ok(Math.abs(result.rSquared - 1) < 1e-12);
+});
+
+test("meanAbsoluteError reports typical prediction distance", () => {
+  assert.equal(meanAbsoluteError([
+    { predicted: 10, actual: 8 },
+    { predicted: 5, actual: 4 },
+  ]), 1.5);
 });
 
 test("fetchWithRetry retries temporary network failures", async () => {

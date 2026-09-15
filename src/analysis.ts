@@ -163,6 +163,11 @@ export function linearRegression(points: Array<{ x: number; y: number }>): Regre
   };
 }
 
+export function meanAbsoluteError(points: Array<{ predicted: number; actual: number }>): number {
+  if (points.length === 0) throw new Error("Mean absolute error needs at least one prediction.");
+  return points.reduce((sum, point) => sum + Math.abs(point.predicted - point.actual), 0) / points.length;
+}
+
 export function scatterSvg(
   points: Array<{ x: number; y: number }>,
   regression: RegressionResult,
