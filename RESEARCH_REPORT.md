@@ -84,7 +84,7 @@ The held-out target period contains 54 sufficiently complete days from November�
 | Prediction method | Average next-day error | Compared with baseline |
 | --- | ---: | --- |
 | Tomorrow resembles today | 2.85 µg/m³ | Baseline |
-| Hotspot count | 2.80 µg/m³ | 0.06 lower after rounding; effectively tied |
+| Hotspot count | 2.80 µg/m³ | 0.06 lower using unrounded values; effectively tied |
 | Hotspot count plus wind | 5.91 µg/m³ | Worse |
 | Fire intensity | 3.12 µg/m³ | Worse |
 | Fire intensity plus wind | 6.15 µg/m³ | Worse |
@@ -126,4 +126,3 @@ The threshold makes the clue less likely to trigger for ordinary background fire
 HazeSignal successfully turns a broad environmental concern into a reproducible experiment with falsifiable tests. The simple fire-and-wind model does not yet provide reliable early warning. Its main contribution is a transparent framework that connects combustion materials, satellite heat detection, vector transport and receptor particle measurements—and then tests whether that physical story survives unseen data.
 
 The next scientifically useful step is broader validation across multiple seasons and Malaysian monitors, followed by rainfall and wind sampled along the transport route. The project should claim progress in method and reasoning, not a forecasting capability that the evidence does not support.
-
