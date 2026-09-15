@@ -5,6 +5,7 @@
   "type": "module",
   "description": "An exploratory fire-and-wind early-warning signal for haze in Malaysia.",
   "scripts": {
+    "start": "tsx src/current.ts",
     "fetch:firms": "tsx src/fetch_firms.ts",
     "fetch:wind": "tsx src/fetch_wind.ts",
     "fetch:pm25": "tsx src/fetch_pm25.ts",
@@ -13,7 +14,8 @@
     "validate": "tsx src/validate_model.ts",
     "notebook": "node scripts/run_notebook.mjs",
     "test": "node --import tsx --test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "npm test && npm run typecheck"
   },
   "dependencies": {
     "csv-parse": "^7.0.2",

@@ -4,6 +4,22 @@ HazeSignal is a small research project investigating whether satellite-detected 
 
 Most air-quality tools describe pollution after it reaches a ground monitor. This project tests an earlier signal: fires are active, and the wind is carrying air from those source regions toward Malaysia.
 
+## Start here
+
+If the project is already set up, one command gives the current Kuala Lumpur report:
+
+```powershell
+npm start
+```
+
+Read the first three labels in order:
+
+1. **AIR TODAY** answers whether measured fine-particle pollution is good, moderate, unhealthy, very unhealthy or hazardous.
+2. **NEXT 1–2 DAYS** says whether an unusually high fire-and-wind clue is present. It does not predict the exact future PM2.5 level.
+3. **ACTION** gives a simple precaution and links to Malaysia's official APIMS reading.
+
+To see whether the research model actually worked on later historical dates, run `npm run validate`. Lower prediction error is better. For the full scientific story, read [RESEARCH_REPORT.md](RESEARCH_REPORT.md). The notebook is optional; using the current check does not require Jupyter, Python or Deno.
+
 ## Hypothesis
 
 > More fire hotspots, when winds are aligned from the fire regions toward Kuala Lumpur, are associated with higher ground-level PM2.5 one or two days later.
@@ -26,7 +42,7 @@ September 2023 is a past test used to see whether the early clue was useful. It 
 After completing the setup below, run:
 
 ```powershell
-npm run current
+npm start
 ```
 
 The report answers three questions first:
@@ -72,6 +88,7 @@ Hotspot count alone had just 0.06 µg/m³ less average error than the baseline, 
 ```text
 hazesignal/
 ├── README.md
+├── RESEARCH_REPORT.md
 ├── notebooks/01_analysis.ipynb
 ├── src/
 │   ├── analysis.ts
@@ -222,13 +239,12 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 - Linear regression assumes a straight-line relationship and does not prove causation.
 - The pilot uses complete daily wind averages and next-day PM2.5 levels. An operational warning test would use only information available at prediction time and compare against a current-PM2.5 persistence baseline.
 
-A fuller study should cover several haze and non-haze seasons, compare multiple Malaysian stations, add rainfall and humidity, test fire radiative power, and evaluate predictions on dates not used to fit the model.
+A fuller study should cover several haze and non-haze seasons, compare multiple Malaysian stations, add rainfall and humidity, sample wind along the transport route, and keep evaluating predictions on dates not used to fit the model.
 
 ## Checks
 
 ```bash
-npm test
-npm run typecheck
+npm run check
 ```
 
 The focused tests cover CSV parsing, calendar validation, compass bearings, circular wind averaging, lagged joins, and regression arithmetic.
