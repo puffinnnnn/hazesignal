@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 
-import { linearRegression, meanAbsoluteError } from "./analysis.js";
+import { isUsablePm25, linearRegression, meanAbsoluteError } from "./analysis.js";
 import { readCsv } from "./csv.js";
 
 interface CombinedCsvRow extends Record<string, string> {
@@ -8,7 +8,9 @@ interface CombinedCsvRow extends Record<string, string> {
   hotspot_count: string;
   aligned_hotspot_count: string;
   pm25_ug_m3: string;
+  pm25_coverage_percent: string;
   pm25_next_day: string;
+  pm25_next_day_coverage_percent: string;
 }
 
 interface ValidationDay {
@@ -20,7 +22,7 @@ interface ValidationDay {
 }
 
 const numberOrNull = (value: string): number | null => {
-  if (value === "") return null;
+  if (value.trim() === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 };
@@ -30,6 +32,8 @@ async function main(): Promise<void> {
   const cutoff = process.argv[3] ?? "2023-11-01";
   const rows = await readCsv<CombinedCsvRow>(input);
   const days = rows.flatMap((row): ValidationDay[] => {
+    const todayCoverage = numberOrNull(row.pm25_coverage_percent ?? "");
+    const tomorrowCoverage = numberOrNull(row.pm25_next_day_coverage_percent ?? "");
     const values = [
       numberOrNull(row.hotspot_count),
       numberOrNull(row.aligned_hotspot_count),
@@ -37,6 +41,7 @@ async function main(): Promise<void> {
       numberOrNull(row.pm25_next_day),
     ];
     if (values.some((value) => value == null)) return [];
+    if (!isUsablePm25(values[2]!, todayCoverage) || !isUsablePm25(values[3]!, tomorrowCoverage)) return [];
     return [{
       date: row.date,
       hotspots: values[0]!,
@@ -64,11 +69,12 @@ async function main(): Promise<void> {
       actual: day.pm25Tomorrow,
     }))),
   };
-  const bestModelError = Math.min(errors.hotspots, errors.aligned);
-  const conclusion = bestModelError < errors.persistence
-    ? "The fire model beat the simple baseline on these unseen dates. It still needs more seasons before use as a warning system."
-    : "The fire model did not beat the simple baseline on these unseen dates. It is not yet a reliable early-warning predictor.";
   const show = (value: number) => value.toFixed(2);
+  const conclusion = errors.aligned < errors.persistence
+    ? "The fire-and-wind model beat the simple baseline on these unseen dates. It still needs more seasons before use as a warning system."
+    : errors.hotspots < errors.persistence
+    ? `Hotspots alone had ${show(errors.persistence - errors.hotspots)} µg/m³ less error than the baseline, but adding wind performed worse. This is mixed evidence and does not yet support the fire-and-wind warning hypothesis.`
+    : "Neither fire model beat the simple baseline on these unseen dates. The method is not yet a reliable early-warning predictor.";
 
   console.log(`HAZESIGNAL — HISTORICAL VALIDATION
 

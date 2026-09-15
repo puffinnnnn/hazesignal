@@ -52,15 +52,15 @@ The complete reproducible example uses September 2023, when all three sources ov
 
 You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.757` does **not** mean the project is 75.7% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
 
-A stronger follow-up trains the models on September–October 2023 and tests them on 55 unseen days in November–December. Average next-day errors were:
+A stronger follow-up trains the models on September–October 2023 and tests them on 53 unseen, sufficiently complete days in November–December. Average next-day errors were:
 
 | Method | Average error |
 | --- | ---: |
-| Assume tomorrow resembles today | 2.75 µg/m³ |
-| Fire hotspots only | 2.77 µg/m³ |
-| Fire hotspots plus wind alignment | 5.59 µg/m³ |
+| Assume tomorrow resembles today | 2.82 µg/m³ |
+| Fire hotspots only | 2.60 µg/m³ |
+| Fire hotspots plus wind alignment | 5.66 µg/m³ |
 
-The fire-and-wind model did not beat the simple baseline on unseen dates. The current method is therefore not yet a reliable early-warning predictor. This negative result is kept visible rather than selecting only the month where wind alignment looked helpful.
+Hotspot count alone had 0.22 µg/m³ less average error than the baseline, a small advantage from one short test. Adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
 
 ## What is included
 
@@ -206,8 +206,8 @@ An alignment of `1` means the wind points directly toward Kuala Lumpur. `0` mean
 ## Limitations
 
 - Four months from one Kuala Lumpur sensor are still too little to establish a reliable warning model.
-- The September 2023 OpenAQ series is missing 27 September, and 28 September has only 29% daily coverage.
-- The original September correlations are fitted and measured on the same observations. The later held-out test is more realistic and did not beat the persistence baseline.
+- Days below 75% OpenAQ coverage are excluded from regression and validation. Four daily values in the four-month sample fall below that threshold.
+- The original September correlations are fitted and measured on the same observations. In the later held-out test, the wind-aligned model did not beat the persistence baseline.
 - A regional centre and Kuala Lumpur's local 10 m wind simplify a long, changing transport path.
 - The rectangular fire boxes can include nearby territories and islands; exact administrative polygons would isolate Indonesian Sumatra and Kalimantan more precisely.
 - Hotspot count treats a small fire and an intense peat fire equally. Fire radiative power would add useful information.

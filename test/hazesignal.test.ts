@@ -7,6 +7,7 @@ import {
   combineDailyData,
   dailyWind,
   initialBearing,
+  isUsablePm25,
   linearRegression,
   meanAbsoluteError,
   windTravelBearing,
@@ -101,6 +102,12 @@ test("meanAbsoluteError reports typical prediction distance", () => {
     { predicted: 10, actual: 8 },
     { predicted: 5, actual: 4 },
   ]), 1.5);
+});
+
+test("PM2.5 readings with less than 75% coverage are excluded", () => {
+  assert.equal(isUsablePm25(40.6, 29), false);
+  assert.equal(isUsablePm25(20, 75), true);
+  assert.equal(isUsablePm25(20), true);
 });
 
 test("fetchWithRetry retries temporary network failures", async () => {
