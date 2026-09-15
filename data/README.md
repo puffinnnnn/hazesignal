@@ -19,7 +19,7 @@ The FIRMS 2019 sample contains 171,521 hotspot rows: 58,370 from the Sumatra box
 
 The 2023 pilot contains 44,992 hotspots, 720 hourly wind readings, and 29 daily PM2.5 readings. OpenAQ has no reading for 27 September, and its 28 September daily value has 29% coverage. The API key is not stored in any CSV.
 
-The four-month validation pull contained 98,577 hotspot rows, 2,928 hourly wind readings, and 117 daily PM2.5 readings. The large raw files remain local; `validation_2023.csv` contains the 122 daily rows required by `npm run validate`, including coverage fields used to exclude days below 75%. Recreate the source pulls by running the three fetch commands with `2023-09-01 2023-12-31`, then run the analysis with those matching files.
+The four-month validation pull contained 98,577 hotspot rows, 2,928 hourly wind readings, and 117 daily PM2.5 readings. The large raw files remain local; `validation_2023.csv` contains the 122 daily rows required by `npm run validate`, including coverage fields used to exclude days below 75%. Recreate the source pulls by running the three fetch commands with `2023-09-01 2023-12-31`, then run `npm run analyze --` with those three matching paths followed by `npm run validate -- data/combined.csv`.
 
 A 2019 OpenAQ sample is not included because its Kuala Lumpur station does not cover the historical study period. The included 2023 sample was pulled with the user's free API key without putting the key in the saved file.
 

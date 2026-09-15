@@ -52,15 +52,15 @@ The complete reproducible example uses September 2023, when all three sources ov
 
 You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.757` does **not** mean the project is 75.7% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
 
-A stronger follow-up trains the models on September–October 2023 and tests them on 53 unseen, sufficiently complete days in November–December. Average next-day errors were:
+A stronger follow-up trains the models on September–October 2023 and tests them on 54 unseen, sufficiently complete target days in November–December. Average next-day errors were:
 
 | Method | Average error |
 | --- | ---: |
-| Assume tomorrow resembles today | 2.82 µg/m³ |
-| Fire hotspots only | 2.60 µg/m³ |
-| Fire hotspots plus wind alignment | 5.66 µg/m³ |
+| Assume tomorrow resembles today | 2.85 µg/m³ |
+| Fire hotspots only | 2.80 µg/m³ |
+| Fire hotspots plus wind alignment | 5.91 µg/m³ |
 
-Hotspot count alone had 0.22 µg/m³ less average error than the baseline, a small advantage from one short test. Adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
+Hotspot count alone had just 0.06 µg/m³ less average error than the baseline, effectively a tie in this short test. Adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
 
 ## What is included
 

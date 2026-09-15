@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 import { isUsablePm25, linearRegression, meanAbsoluteError } from "./analysis.js";
-import { readCsv } from "./csv.js";
+import { addDays, readCsv } from "./csv.js";
 
 interface CombinedCsvRow extends Record<string, string> {
   date: string;
@@ -50,8 +50,8 @@ async function main(): Promise<void> {
       pm25Tomorrow: values[3]!,
     }];
   });
-  const training = days.filter((day) => day.date < cutoff);
-  const testing = days.filter((day) => day.date >= cutoff);
+  const training = days.filter((day) => addDays(day.date, 1) < cutoff);
+  const testing = days.filter((day) => addDays(day.date, 1) >= cutoff);
   if (training.length < 2 || testing.length === 0) {
     throw new Error("Validation needs at least two training days and one later testing day.");
   }
@@ -78,11 +78,11 @@ async function main(): Promise<void> {
 
   console.log(`HAZESIGNAL — HISTORICAL VALIDATION
 
-TRAINING DATA
-${training[0]!.date} to ${training.at(-1)!.date} (${training.length} complete days)
+TRAINING TARGET DATES
+${addDays(training[0]!.date, 1)} to ${addDays(training.at(-1)!.date, 1)} (${training.length} complete days)
 
-UNSEEN TEST DATA
-${testing[0]!.date} to ${testing.at(-1)!.date} (${testing.length} complete days)
+UNSEEN TARGET DATES
+${addDays(testing[0]!.date, 1)} to ${addDays(testing.at(-1)!.date, 1)} (${testing.length} complete days)
 
 AVERAGE NEXT-DAY ERROR (lower is better)
 Tomorrow resembles today:  ${show(errors.persistence)} µg/m³
