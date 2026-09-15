@@ -14,12 +14,11 @@ type RegionName = keyof typeof SOURCE_CENTROIDS;
 interface CurrentReport {
   checkedAt: string;
   pm25: {
-    value: number;
     average24h: number | null;
-    hoursUsed: number;
+    monitorCount: number;
+    rangeLow: number | null;
+    rangeHigh: number | null;
     unit: string;
-    place: string;
-    measuredAt: string;
   };
   wind: { speed: number; direction: number };
   fires: Array<{ region: RegionName; count: number; alignment: number }>;
@@ -89,6 +88,15 @@ export function pm25Category(value: number): Pm25Category {
   return PM25_BANDS.find((band) => value <= band.max) ?? PM25_BANDS.at(-1)!;
 }
 
+export function median(values: number[]): number {
+  if (values.length === 0) throw new Error("Median needs at least one value.");
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[middle]!
+    : (sorted[middle - 1]! + sorted[middle]!) / 2;
+}
+
 function localTime(iso: string): string {
   return new Intl.DateTimeFormat("en-MY", {
     timeZone: "Asia/Kuala_Lumpur",
@@ -108,8 +116,8 @@ export function formatCurrentReport(report: CurrentReport): string {
     return `${band.label.padEnd(16)} ${band.range.padEnd(12)}${marker}`;
   }).join("\n");
   const airReading = category
-    ? `24-hour PM2.5 average: ${report.pm25.average24h} ${report.pm25.unit}`
-    : `Only ${report.pm25.hoursUsed} of 24 hourly readings were available, so no category was estimated.`;
+    ? `KL-area 24-hour PM2.5 estimate: ${report.pm25.average24h} ${report.pm25.unit}`
+    : "Not enough complete, recent monitor data was available, so no category was estimated.";
   const clueExplanation = hasClue
     ? "Recent fires and wind direction could allow smoke to travel toward Kuala Lumpur."
     : "Recent fire detections and current wind do not form a clear incoming-haze clue.";
@@ -140,7 +148,7 @@ ${action}
 Official Malaysian reading: https://apims.doe.gov.my/
 
 EVIDENCE
-PM2.5 monitor: ${report.pm25.place} (${report.pm25.hoursUsed} hourly readings)
+PM2.5 monitors: ${report.pm25.monitorCount} nearby monitors (24-hour range ${report.pm25.rangeLow ?? "?"}–${report.pm25.rangeHigh ?? "?"} ${report.pm25.unit})
 Fire detections: Sumatra ${sumatra} | Kalimantan ${kalimantan}
 Strongest wind match: ${strongestName} ${Math.round(strongest.alignment * 100)}%
 
@@ -163,8 +171,12 @@ async function fetch24HourAverage(
     headers: { "X-API-Key": apiKey },
   });
   if (!response.ok) return { average24h: null, hoursUsed: 0 };
-  const rows = (await response.json() as { results?: Array<{ value?: number }> }).results ?? [];
-  const values = rows.flatMap((row) => typeof row.value === "number" && row.value >= 0 ? [row.value] : []);
+  const rows = (await response.json() as {
+    results?: Array<{ value?: number; flagInfo?: { hasFlags?: boolean } }>;
+  }).results ?? [];
+  const values = rows.flatMap((row) =>
+    typeof row.value === "number" && row.value >= 0 && row.flagInfo?.hasFlags !== true ? [row.value] : []
+  );
   const average = values.reduce((sum, value) => sum + value, 0) / values.length;
   return {
     average24h: values.length >= 18 ? Math.round(average * 10) / 10 : null,
@@ -190,6 +202,8 @@ async function fetchCurrentPm25(apiKey: string): Promise<CurrentReport["pm25"]> 
       .map((sensor) => ({ ...sensor, place: location.name, distance: location.distance ?? Infinity }))
   ).sort((a, b) => a.distance - b.distance);
 
+  const readings: number[] = [];
+  let unit = "µg/m³";
   for (const candidate of candidates) {
     const sensorResponse = await fetch(`${OPENAQ_URL}/sensors/${candidate.id}`, { headers });
     if (!sensorResponse.ok) continue;
@@ -199,16 +213,23 @@ async function fetchCurrentPm25(apiKey: string): Promise<CurrentReport["pm25"]> 
     const ageHours = measuredAt ? (Date.now() - Date.parse(measuredAt)) / 3_600_000 : Infinity;
     if (typeof value === "number" && measuredAt && ageHours >= -1 && ageHours <= 48) {
       const recent = await fetch24HourAverage(candidate.id, apiKey, measuredAt);
-      return {
-        value,
-        ...recent,
-        unit: sensor?.parameter?.units ?? "µg/m³",
-        place: candidate.place,
-        measuredAt,
-      };
+      if (recent.average24h != null) {
+        readings.push(recent.average24h);
+        unit = sensor?.parameter?.units ?? unit;
+        if (readings.length === 5) break;
+      }
     }
   }
-  throw new Error("OpenAQ has no PM2.5 monitor near Kuala Lumpur updated within the last 48 hours.");
+  if (readings.length === 0) {
+    return { average24h: null, monitorCount: 0, rangeLow: null, rangeHigh: null, unit };
+  }
+  return {
+    average24h: Math.round(median(readings) * 10) / 10,
+    monitorCount: readings.length,
+    rangeLow: Math.min(...readings),
+    rangeHigh: Math.max(...readings),
+    unit,
+  };
 }
 
 async function fetchCurrentWind(): Promise<CurrentReport["wind"]> {

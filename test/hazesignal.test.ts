@@ -11,7 +11,7 @@ import {
   windTravelBearing,
 } from "../src/analysis.js";
 import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
-import { formatCurrentReport, pm25Category } from "../src/current.js";
+import { formatCurrentReport, median, pm25Category } from "../src/current.js";
 
 test("parseCsv keeps commas inside quoted fields", () => {
   const rows = parseCsv<{ name: string; note: string }>('name,note\nKL,"hot, hazy"\n');
@@ -144,12 +144,11 @@ test("current report explains readings without claiming a forecast", () => {
   const report = formatCurrentReport({
     checkedAt: "2026-09-14T14:00:00.000Z",
     pm25: {
-      value: 122.2,
       average24h: 80,
-      hoursUsed: 23,
+      monitorCount: 5,
+      rangeLow: 74,
+      rangeHigh: 91,
       unit: "µg/m³",
-      place: "KLCC",
-      measuredAt: "2026-09-14T13:00:00.000Z",
     },
     wind: { speed: 9.2, direction: 225 },
     fires: [
@@ -164,6 +163,7 @@ test("current report explains readings without claiming a forecast", () => {
   assert.match(report, /80 is unhealthy\. 160 is very unhealthy\./i);
   assert.match(report, /NEXT 1–2 DAYS: WARNING CLUE PRESENT/);
   assert.match(report, /ACTION/);
+  assert.match(report, /5 nearby monitors.*74–91 µg\/m³/i);
   assert.doesNotMatch(report, /incomplete combustion/i);
 });
 
@@ -173,4 +173,8 @@ test("PM2.5 category follows Malaysia DOE concentration bands", () => {
   assert.equal(pm25Category(80).name, "UNHEALTHY");
   assert.equal(pm25Category(200).name, "VERY UNHEALTHY");
   assert.equal(pm25Category(300).name, "HAZARDOUS");
+});
+
+test("median resists one extreme monitor reading", () => {
+  assert.equal(median([79, 80, 81, 82, 500]), 81);
 });

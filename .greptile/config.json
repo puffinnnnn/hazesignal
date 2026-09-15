@@ -1,0 +1,26 @@
+{
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax"],
+  "triggerOnUpdates": true,
+  "statusCheck": true,
+  "fixWithAI": true,
+  "rules": [
+    {
+      "id": "scientific-honesty",
+      "rule": "Flag claims that turn correlation or a fire-and-wind clue into proven causation, validated forecast accuracy, or definite future haze severity.",
+      "severity": "high",
+      "scope": ["README.md", "src/**", "notebooks/**"]
+    },
+    {
+      "id": "air-data-quality",
+      "rule": "Flag air-quality categories calculated from stale, flagged, wrongly unit-labelled, or insufficiently complete PM2.5 observations.",
+      "severity": "high",
+      "scope": ["src/**", "test/**"]
+    },
+    {
+      "id": "protect-api-keys",
+      "rule": "Never allow API keys, tokens, or .env contents into tracked files, logs, fixtures, or error messages.",
+      "severity": "high"
+    }
+  ]
+}

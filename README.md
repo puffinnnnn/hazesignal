@@ -35,7 +35,7 @@ The report answers three questions first:
 - **TOMORROW:** Is the fire-and-wind warning clue present? This is still labelled as a clue rather than a forecast.
 - **WHAT YOU SHOULD DO:** What simple precaution fits the current particle category, plus a link to official APIMS advice.
 
-The command automatically chooses a nearby PM2.5 sensor updated within the last 48 hours. `OPENAQ_SENSOR_ID` is not needed for this current check. It averages the most recent 24 hours and only assigns a category when at least 18 hourly readings are available. The category uses the [Malaysia DOE PM2.5 concentration bands](https://eqms.doe.gov.my/Documents/APIMS/API_Calculation.pdf), but it is a PM2.5-only estimate rather than the official API, which checks several pollutants. For Malaysia's official current status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
+The command automatically finds up to five nearby PM2.5 sensors updated within the last 48 hours. `OPENAQ_SENSOR_ID` is not needed for this current check. Each monitor needs at least 18 of the latest 24 hourly readings. HazeSignal uses the middle monitor value and shows the full monitor range, so one unusual sensor is less likely to control the result. The category uses the [Malaysia DOE PM2.5 concentration bands](https://eqms.doe.gov.my/Documents/APIMS/API_Calculation.pdf), but it is a PM2.5-only estimate rather than the official API, which checks several pollutants. For Malaysia's official current status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
 
 ### What the terms mean
 
