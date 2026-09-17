@@ -18,6 +18,7 @@ import { fetchFirms, fetchWithRetry } from "../src/fetch_firms.js";
 import {
   formatCurrentReport,
   isPm25MassUnit,
+  isRecentMeasurement,
   median,
   percentile,
   pm25Category,
@@ -203,6 +204,7 @@ test("current report explains readings without claiming a forecast", () => {
   assert.match(report, /signal: 108 \(historical high threshold 100; 1\.1× this threshold\)/i);
   assert.doesNotMatch(report, /incomplete combustion/i);
   assert.throws(() => formatCurrentReport({ ...input, highSignalThreshold: 0 }), /must be positive/i);
+  assert.match(formatCurrentReport({ ...input, highSignalThreshold: 1_000 }), /does not mean today's air is safe/i);
 });
 
 test("current fire signal uses each detection day's wind", () => {
@@ -246,4 +248,11 @@ test("PM2.5 categories only accept micrograms per cubic metre", () => {
   assert.equal(isPm25MassUnit("µg/m³"), true);
   assert.equal(isPm25MassUnit("ug/m3"), true);
   assert.equal(isPm25MassUnit("mg/m³"), false);
+});
+
+test("live PM2.5 rejects old or invalid monitor timestamps", () => {
+  const now = Date.parse("2026-09-17T12:00:00Z");
+  assert.equal(isRecentMeasurement("2026-09-17T01:00:00Z", now), true);
+  assert.equal(isRecentMeasurement("2026-09-16T23:00:00Z", now), false);
+  assert.equal(isRecentMeasurement("unknown", now), false);
 });

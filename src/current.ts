@@ -19,6 +19,7 @@ import { FIRE_REGIONS, FIRMS_URL, fetchWithRetry } from "./fetch_firms.js";
 
 const OPENAQ_URL = "https://api.openaq.org/v3";
 const CURRENT_FIRMS_SENSOR = "VIIRS_SNPP_NRT";
+const MAX_MONITOR_AGE_HOURS = 12;
 
 type RegionName = keyof typeof SOURCE_CENTROIDS;
 
@@ -122,6 +123,11 @@ export function isPm25MassUnit(unit: string | undefined): boolean {
   return normalised === "µg/m3" || normalised === "ug/m3";
 }
 
+export function isRecentMeasurement(measuredAt: string, now: number): boolean {
+  const ageHours = (now - Date.parse(measuredAt)) / 3_600_000;
+  return ageHours >= -1 && ageHours <= MAX_MONITOR_AGE_HOURS;
+}
+
 function localTime(iso: string): string {
   return new Intl.DateTimeFormat("en-MY", {
     timeZone: "Asia/Kuala_Lumpur",
@@ -147,7 +153,7 @@ export function formatCurrentReport(report: CurrentReport): string {
     : "Not enough complete, recent monitor data was available, so no category was estimated.";
   const clueExplanation = hasClue
     ? "Recent fires and wind direction could allow smoke to travel toward Kuala Lumpur."
-    : "Recent fire detections and current wind do not form a clear incoming-haze clue.";
+    : "Recent fire detections and current wind do not form a clear incoming-haze clue. This does not mean today's air is safe.";
   const action = category?.action ?? "Check APIMS for the official current category before making outdoor plans.";
   const sumatra = report.fires.find((fire) => fire.region === "sumatra")?.count ?? 0;
   const kalimantan = report.fires.find((fire) => fire.region === "kalimantan")?.count ?? 0;
@@ -249,8 +255,7 @@ async function fetchCurrentPm25(apiKey: string): Promise<CurrentReport["pm25"]> 
     const value = sensor?.latest?.value;
     const measuredAt = sensor?.latest?.datetime?.utc;
     const sensorUnit = sensor?.parameter?.units;
-    const ageHours = measuredAt ? (Date.now() - Date.parse(measuredAt)) / 3_600_000 : Infinity;
-    if (typeof value === "number" && measuredAt && isPm25MassUnit(sensorUnit) && ageHours >= -1 && ageHours <= 48) {
+    if (typeof value === "number" && measuredAt && isPm25MassUnit(sensorUnit) && isRecentMeasurement(measuredAt, Date.now())) {
       const recent = await fetch24HourAverage(candidate.id, apiKey, measuredAt);
       if (recent.average24h != null) {
         readings.push(recent.average24h);
