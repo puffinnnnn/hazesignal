@@ -175,6 +175,7 @@ This is a PM2.5-only estimate, not the official Malaysian API.
 NEXT 1–2 DAYS: ${tomorrow}
 ${clueExplanation}
 The research cannot yet reliably predict how severe the haze will be.
+In a limited 2025 historical check, this rule missed two chances to warn before one unhealthy PM2.5 episode at one monitor.
 
 ACTION
 ${action}
