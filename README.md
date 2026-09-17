@@ -53,7 +53,7 @@ The report answers three questions first:
 
 The warning clue is intentionally conservative: the combined two-day fire-and-wind signal must reach the top 10% of the September–December 2023 pilot period. This is a provisional research threshold, not a forecast probability.
 
-The command automatically finds up to five nearby PM2.5 sensors updated within the last 48 hours. `OPENAQ_SENSOR_ID` is not needed for this current check. Each monitor needs at least 18 of the latest 24 hourly readings. HazeSignal uses the middle monitor value and shows the full monitor range, so one unusual sensor is less likely to control the result. The category uses the [Malaysia DOE PM2.5 concentration bands](https://eqms.doe.gov.my/Documents/APIMS/API_Calculation.pdf), but it is a PM2.5-only estimate rather than the official API, which checks several pollutants. For Malaysia's official current status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
+The command automatically finds up to five nearby PM2.5 sensors updated within the last 12 hours. If no monitor is recent enough, it shows “NOT ENOUGH DATA” instead of labelling older measurements as today's air. `OPENAQ_SENSOR_ID` is not needed for this current check. Each monitor needs at least 18 of the latest 24 hourly readings. HazeSignal uses the middle monitor value and shows the full monitor range, so one unusual sensor is less likely to control the result. The category uses the [Malaysia DOE PM2.5 concentration bands](https://eqms.doe.gov.my/Documents/APIMS/API_Calculation.pdf), but it is a PM2.5-only estimate rather than the official API, which checks several pollutants. For Malaysia's official current status and health advice, use [DOE APIMS](https://apims.doe.gov.my/).
 
 ### What the terms mean
 
@@ -69,7 +69,7 @@ Peat and plant material can undergo incomplete combustion, producing soot, ash, 
 
 The complete reproducible example uses September 2023, when all three sources overlap. After excluding a target day with only 29% PM2.5 coverage, hotspot count alone has `r = 0.552`, while wind-aligned hotspot count has `r = 0.696` across 27 next-day observations. These are in-sample correlations from one month, not validated forecast accuracy.
 
-You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.757` does **not** mean the project is 75.7% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
+You can ignore `r` and `R²` when using the current check. They only describe the past experiment. Here, `r` is a pattern score: a value near `1` means the fire-and-wind number and next-day PM2.5 often rose together; a value near `0` means no clear straight-line pattern. An `r` of `0.696` does **not** mean the project is 69.6% accurate. `R²` is another way researchers summarize the same fitted line, and it also does not measure forecast accuracy.
 
 A stronger follow-up trains the models on September–October 2023 and tests them on 54 unseen, sufficiently complete target days in November–December. Average next-day errors were:
 
