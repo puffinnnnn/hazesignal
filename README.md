@@ -20,6 +20,10 @@ Read the first three labels in order:
 
 To see whether the research model actually worked on later historical dates, run `npm run validate`. Lower prediction error is better. For the full scientific story, read [RESEARCH_REPORT.md](RESEARCH_REPORT.md). The notebook is optional; using the current check does not require Jupyter, Python or Deno.
 
+To test the actual high-fire warning rule against an independent 2025 season, run `npm run backtest`. In that limited check it issued no warnings and missed both opportunities to warn before one unhealthy PM2.5 episode. It must not be treated as a reliable forecast.
+
+For one real calculation in plain language, read [WORKED_EXAMPLE.md](WORKED_EXAMPLE.md). It shows the hotspot counts, wind adjustment, threshold and next-day PM2.5 for 19 September 2025.
+
 ## Hypothesis
 
 > More fire hotspots, when winds are aligned from the fire regions toward Kuala Lumpur, are associated with higher ground-level PM2.5 one or two days later.
@@ -83,15 +87,19 @@ A stronger follow-up trains the models on September–October 2023 and tests the
 
 Hotspot count alone had just 0.06 µg/m³ less average error than the baseline, effectively a tie in this short test. Weighting detections by NASA fire radiative power did not improve the result, and adding wind performed much worse. The central fire-plus-wind hypothesis is therefore not yet supported as a reliable early-warning predictor. This mixed result is kept visible rather than selecting only the month where wind alignment looked helpful.
 
+An independent September–October 2025 test found 56 eligible end-of-day warning decisions at a Taman Tun Dr. Ismail monitor. One unhealthy episode gave two chances to warn; the fixed 2023 threshold triggered on neither date. Another monitor at Setia Eco Park rose at the same time but did not cross the unhealthy band. These observations do not establish whether the fires caused the rise. See [RESEARCH_REPORT.md](RESEARCH_REPORT.md) for the calculation and limits.
+
 ## What is included
 
 ```text
 hazesignal/
 ├── README.md
 ├── RESEARCH_REPORT.md
+├── WORKED_EXAMPLE.md
 ├── notebooks/01_analysis.ipynb
 ├── src/
 │   ├── analysis.ts
+│   ├── backtest_warning.ts
 │   ├── current.ts
 │   ├── csv.ts
 │   ├── fetch_firms.ts
@@ -208,6 +216,8 @@ npm run validate
 ```
 
 This fits the two fire models on September–October 2023, evaluates them on November–December, and compares their average error with the simple assumption that tomorrow's PM2.5 will resemble today's. Lower error is better. The testing dates are kept out of model fitting so this is a more demanding check than measuring correlation on the same dates used to draw the line.
+
+The separate `npm run backtest` command checks the live rule's fixed 2023 threshold against a 2025 fire season. It counts days when an unhealthy PM2.5 reading lay one or two days ahead, along with warnings, misses and false alarms. Zero warnings means a false-alarm percentage cannot be estimated; it does not mean the warning rule succeeded.
 
 ## Wind alignment in plain language
 
