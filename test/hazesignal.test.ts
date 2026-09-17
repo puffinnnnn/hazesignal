@@ -273,4 +273,5 @@ test("warning backtest counts missed rises and false alarms without using test d
   });
   assert.throws(() => backtestWarning([training[0]!, training[2]!], testing), /training dates must be ordered/i);
   assert.throws(() => backtestWarning(training, [testing[1]!, testing[0]!, ...testing.slice(2)]), /testing dates must be ordered/i);
+  assert.throws(() => backtestWarning(testing, testing), /testing dates must follow/i);
 });

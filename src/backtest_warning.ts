@@ -20,6 +20,9 @@ export function backtestWarning(training: WarningDay[], testing: WarningDay[]) {
       }
     }
   }
+  if (training.at(-1)!.date >= testing[0]!.date) {
+    throw new Error("Testing dates must follow the training dates.");
+  }
   const trainingSignals = training.slice(1).map((day, index) => day.aligned + training[index]!.aligned);
   const threshold = percentile(trainingSignals, 0.9);
   if (!Number.isFinite(threshold) || threshold <= 0) throw new Error("The fire-signal threshold must be positive and finite.");
@@ -90,7 +93,7 @@ ${result.warnings === 0 ? "No warnings were issued, so a false-alarm percentage 
 ${result.events === 0 ? "No unhealthy events occurred, so a detection percentage cannot be estimated." : `${result.missed} of ${result.events} eligible warning opportunities were missed.`}
 
 An unhealthy day can create two warning opportunities, so these counts are not separate haze episodes.
-This is an end-of-day historical comparison, not a replay of every live run. It uses complete daily wind and two different PM2.5 monitors. It cannot establish forecast skill.`);
+This is an end-of-day historical comparison, not a replay of every live run. It uses complete daily wind, standard-processed fire detections and two different PM2.5 monitors. The live check uses near-real-time detections. This test cannot establish forecast skill.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
