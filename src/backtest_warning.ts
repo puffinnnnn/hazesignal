@@ -13,6 +13,13 @@ export interface WarningDay {
 
 export function backtestWarning(training: WarningDay[], testing: WarningDay[]) {
   if (training.length < 2 || testing.length < 4) throw new Error("The backtest needs at least two training and four testing dates.");
+  for (const [name, days] of [["Training", training], ["Testing", testing]] as const) {
+    for (let index = 1; index < days.length; index += 1) {
+      if (addDays(days[index - 1]!.date, 1) !== days[index]!.date) {
+        throw new Error(`${name} dates must be ordered, unique and consecutive.`);
+      }
+    }
+  }
   const trainingSignals = training.slice(1).map((day, index) => day.aligned + training[index]!.aligned);
   const threshold = percentile(trainingSignals, 0.9);
   if (!Number.isFinite(threshold) || threshold <= 0) throw new Error("The fire-signal threshold must be positive and finite.");
@@ -27,8 +34,6 @@ export function backtestWarning(training: WarningDay[], testing: WarningDay[]) {
     const today = testing[index]!;
     const tomorrow = testing[index + 1]!;
     const dayAfter = testing[index + 2]!;
-    if (addDays(yesterday.date, 1) !== today.date || addDays(today.date, 1) !== tomorrow.date ||
-        addDays(tomorrow.date, 1) !== dayAfter.date) continue;
     if (![today, tomorrow, dayAfter].every((day) => isUsablePm25(day.pm25, day.coverage))) continue;
     if (today.pm25! >= 50.5) continue; // An already-unhealthy day is not a new early-warning opportunity.
 
