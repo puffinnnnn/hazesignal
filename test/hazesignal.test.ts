@@ -200,7 +200,7 @@ test("current report explains readings without claiming a forecast", () => {
   assert.match(report, /Unhealthy\s+50\.5–150\.4\s+← CURRENT: 80/);
   assert.match(report, /80 is unhealthy\. 160 is very unhealthy\./i);
   assert.match(report, /NEXT 1–2 DAYS: WARNING CLUE PRESENT/);
-  assert.match(report, /missed two chances to warn before one unhealthy PM2\.5 episode/i);
+  assert.match(report, /in a limited 2025 historical check, this rule missed two chances to warn before one unhealthy PM2\.5 episode at one monitor/i);
   assert.match(report, /ACTION/);
   assert.match(report, /5 nearby monitors.*74–91 µg\/m³/i);
   assert.match(report, /signal: 108 \(historical high threshold 100; 1\.1× this threshold\)/i);
