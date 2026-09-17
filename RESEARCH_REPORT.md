@@ -8,7 +8,7 @@
 
 HazeSignal investigates whether satellite-detected fires in Sumatra and Kalimantan can provide an earlier warning of rising PM2.5 in Kuala Lumpur. It combines NASA FIRMS fire detections, Open-Meteo wind observations and OpenAQ ground measurements. The model uses transparent vector calculations and hand-written linear regression rather than a hidden forecasting library.
 
-The exploratory September 2023 sample showed a positive same-sample relationship between wind-aligned hotspots and next-day PM2.5. A stricter test trained on September–October and evaluated 54 sufficiently complete target days in November–December. Hotspot count produced an average error of 2.80 µg/m³, almost identical to the 2.85 µg/m³ persistence baseline. Adding wind increased error to 5.91 µg/m³. Weighting fires by NASA fire radiative power also failed to improve the result. HazeSignal therefore remains a research warning clue, not a validated forecast.
+The exploratory September 2023 sample showed a positive same-sample relationship between wind-aligned hotspots and next-day PM2.5. A stricter test trained on September–October and evaluated 54 sufficiently complete target days in November–December. Hotspot count produced an average error of 2.80 µg/m³, almost identical to the 2.85 µg/m³ persistence baseline. Adding wind increased error to 5.91 µg/m³. Weighting fires by NASA fire radiative power also failed to improve the result. A separate 2025 check found that the live threshold missed both chances to warn before one unhealthy PM2.5 episode. HazeSignal is therefore an exploratory research clue, not a validated forecast.
 
 ## The research question
 
@@ -92,6 +92,18 @@ The held-out target period contains 54 sufficiently complete days from November�
 The September-only scatter plot looks more encouraging: wind-aligned hotspot count has `r = 0.696` across 27 coverage-qualified next-day observations. That value describes how closely two quantities rose together within the fitted sample. It does not mean 69.6% forecast accuracy.
 
 The held-out error is the more useful test. It shows that the current wind treatment does not generalise to later dates.
+
+## Independent warning-rule check
+
+The live command uses a second, simpler rule: it calls the last two days of wind-aligned hotspots “high” when they exceed the 90th percentile of the September–December 2023 signals. That fixed threshold is about **2,221**. To test it without choosing the threshold from the test dates, `npm run backtest` applies it to September–October 2025. This is a different season and a different Kuala Lumpur-area OpenAQ monitor at Taman Tun Dr. Ismail.
+
+The test asks whether PM2.5, while still below **50.5 µg/m³** today, reaches the PM2.5-only unhealthy band within the next two days. There were **56 eligible end-of-day decisions**. One unhealthy episode on 20–21 September provided **two opportunities** to warn, on 18 and 19 September. The rule issued **zero warnings** and missed both opportunities. Because it never warned, zero recorded false alarms cannot be interpreted as a good false-alarm rate.
+
+On those two dates, even the *unadjusted* two-day hotspot totals were only **63** and **463**. Wind alignment can only reduce these totals, so replacing the Kuala Lumpur wind with a perfect route-aligned wind could not have reached the 2,221 threshold. The weakness is therefore not only the local wind assumption. The signal may miss smaller fires, emissions outside the chosen boxes, or pollution from other sources; these data cannot identify which explanation caused this episode.
+
+A second complete OpenAQ series from Setia Eco Park rose from **22.1 to 41.6 µg/m³** between 19 and 20 September, but did not cross the unhealthy band. This supports a broader rise in particle levels while showing that the exact category depends on the monitor. The two stations are not interchangeable. The backtest uses full-day historical wind and standard-processed fire detections, whereas the live check uses partial days and near-real-time detections. It is an end-of-day analogue rather than an exact replay of each live run.
+
+The result narrows the claim further: HazeSignal's current warning threshold has **not** shown useful advance-warning performance in an independent season. The current air reading and the official APIMS page remain the actionable parts of the live report.
 
 ## What the negative result teaches us
 

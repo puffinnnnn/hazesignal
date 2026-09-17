@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parseCsv, validateDateRange } from "../src/csv.js";
+import { backtestWarning, type WarningDay } from "../src/backtest_warning.js";
 import {
   alignmentScore,
   combineDailyData,
@@ -255,4 +256,22 @@ test("live PM2.5 rejects old or invalid monitor timestamps", () => {
   assert.equal(isRecentMeasurement("2026-09-17T01:00:00Z", now), true);
   assert.equal(isRecentMeasurement("2026-09-16T23:00:00Z", now), false);
   assert.equal(isRecentMeasurement("unknown", now), false);
+});
+
+test("warning backtest counts missed rises and false alarms without using test dates to set the threshold", () => {
+  const makeDay = (day: number, aligned: number, pm25: number): WarningDay => ({
+    date: `2025-09-${String(day).padStart(2, "0")}`,
+    aligned,
+    pm25,
+    coverage: 100,
+  });
+  const training = [makeDay(1, 1, 10), makeDay(2, 1, 10), makeDay(3, 8, 10), makeDay(4, 8, 10)];
+  const testing = [makeDay(10, 1, 10), makeDay(11, 1, 10), makeDay(12, 20, 10),
+    makeDay(13, 1, 60), makeDay(14, 1, 10), makeDay(15, 20, 10), makeDay(16, 1, 10), makeDay(17, 1, 10)];
+  assert.deepEqual(backtestWarning(training, testing), {
+    threshold: 16, eligible: 4, events: 2, warnings: 2, caught: 1, missed: 1, falseAlarms: 1,
+  });
+  assert.throws(() => backtestWarning([training[0]!, training[2]!], testing), /training dates must be ordered/i);
+  assert.throws(() => backtestWarning(training, [testing[1]!, testing[0]!, ...testing.slice(2)]), /testing dates must be ordered/i);
+  assert.throws(() => backtestWarning(testing, testing), /testing dates must follow/i);
 });
